@@ -25,7 +25,7 @@ declare namespace APIGateway {
     interface RESTConfig {
       /*
         path: Optional root path for underlying service.
-        
+
         If service name is "iam.user" and "users" is given as path, "/users/*" will be routed for the service.
         otherwise, "/iam.user/*" will be routed for the service endpoints.
       */
@@ -33,24 +33,27 @@ declare namespace APIGateway {
 
       /*
         aliases: Map actions to REST endpoint.
-  
+
         "POST login": "iam.user.issueToken"
-        => POST /users/login    (call iam.user.issueToken)
-  
+        => POST /users/login        => iam.user.issueToken
+
         "POST /": "iam.user.create"
-        => POST /users          (call iam.user.create)
-  
+        => POST /users              => iam.user.create
+
         "GET /:id": "iam.user.get"
-        => GET /users/:id       (call iam.user.get)
+        => GET /users/:id           => iam.user.get
            :id param will be used to call iam.user.get action.
            Also any params from query string will be merged into the params to call the action.
-  
+
         "REST /": "iam.user"
-        => GET    /users        (call iam.user.list)
-           GET    /users/:id    (call iam.user.get)
-           POST   /users        (call iam.user.create)
-           PUT    /users        (call iam.user.update)
-           DELETE /users/:id    (call iam.user.remove)
+        => GET    /users            => iam.user.list
+           GET    /users/:id        => iam.user.get
+           POST   /users            => iam.user.create
+           PUT    /users            => iam.user.update
+           DELETE /users/:id        => iam.user.remove
+
+        "/some/path": "iam.user.any"
+        => *      /users/some/path  => iam.user.any
       */
       aliases: {
         [alias: string]: RESTAliasConfig
@@ -70,28 +73,28 @@ declare namespace APIGateway {
     interface GraphQLConfig {
       /*
         schema: Either a string or strings which defines the GraphQL schema for the service.
-        
+
         `
         extend Query {
           user(id: ID!) User!
         }
-        
+
         type User {
           id: ID!
           email: String!
           posts: [Post!]!
         }
-        
+
         extend type Post {
            author: User
         }
         `
       */
       schema: string
-      
+
       /*
         resolvers: Defines the ways to resolve the given schema.
-        
+
         "Query.user": {...}
         "User.posts": {...}
         "Post.author": {...}
@@ -143,11 +146,11 @@ declare namespace APIGateway {
         }
        */
       params?: { [paramName: string]: any }
-      
+
       /*
         paramsWithBatch: If any param names given, API Gateway will use the batch loader (GraphQL DataLoader) to resolve the given field.
         In this case, the mapped action should be able to serve the request with batched params.
-        
+
         "Query.user": {
           action: "iam.user.get",
           params: {
@@ -155,7 +158,7 @@ declare namespace APIGateway {
           }
           paramsWithBatch: ["id"]
         }
-        
+
         Then "iam.user.get" action should be able to serve the request with { id: ["user-1", "user-2", ...] } params.
 
         "User.post": {
@@ -169,7 +172,7 @@ declare namespace APIGateway {
         In above example, "post.get" action should be able to serve { userId: ["user-1", "user-2", ...] } params.
        */
       paramsWithBatch?: string[]
-      
+
       /*
         ignoreError: If true, "null" will be returned on error.
        */
@@ -188,7 +191,10 @@ declare namespace APIGateway {
   }
 
   namespace CatalogService {
-
+    interface ServiceError {
+      service: string
+      errors: string[]
+    }
   }
 }
 
