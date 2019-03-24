@@ -1,15 +1,17 @@
-import Moleculer  from "moleculer";
+import Moleculer from "moleculer";
+import { GraphQLResolveInfo } from "graphql";
 
 declare namespace APIGateway {
 
   namespace UnderlyingService {
+    // Service schema of underlying service.
     interface ServiceSchema extends Moleculer.ServiceSchema {
       // Metadata of underlying service.
       metadata?: {
         // API Gateway Service will seek only the "api" field of service metadata.
         api?: APIConfig
 
-        // internal usage to compare api configuration between same named services.
+        // Internal usage to compare api configuration between same named services.
         apiVersion?: string
       } & Moleculer.GenericObject;
     }
@@ -112,66 +114,17 @@ declare namespace APIGateway {
       action: string
 
       /*
-        params: Params key/value map to call the given action.
-
-        1) Map a param from field params.
-        The params option { id: "@.id" } will make resolver to call the action "post.get" with { userId: 'id value of the field params' } params.
-
-        "Query.user": {
-          action: "iam.user.get",
-          params: {
-            id: "@.id"
-          }
-        }
-
-        2) Map a param from the root object props.
-        The params option { userId: "$.id" } will make resolver to call the action "post.get" with { userId: 'id value of the root object props' } params.
+        batch: If true, API Gateway will use the batch loader (GraphQL DataLoader) to resolve the given field.
+        In this case, the mapped action should be able to serve the request with batching for first param.
 
         "User.post": {
           action: "post.get",
-          params: {
-            userId: "$.id"
-          }
+          batch: true
         }
 
-
-        3) Define a param value directly.
-        Otherwise, given primitive value will be used directly to call the action.
-
-        "Query.user": {
-          action: "iam.user.get",
-          params: {
-            ignoreDisabledUser: true
-          }
-        }
+        In above example, "post.get({ id, ... })" action should be able to serve { id: ["post-1", "post-2", ...] } request.
        */
-      params?: { [paramName: string]: any }
-
-      /*
-        paramsWithBatch: If any param names given, API Gateway will use the batch loader (GraphQL DataLoader) to resolve the given field.
-        In this case, the mapped action should be able to serve the request with batched params.
-
-        "Query.user": {
-          action: "iam.user.get",
-          params: {
-            id: "@.id"
-          }
-          paramsWithBatch: ["id"]
-        }
-
-        Then "iam.user.get" action should be able to serve the request with { id: ["user-1", "user-2", ...] } params.
-
-        "User.post": {
-          action: "post.get",
-          params: {
-            userId: "$.id"
-          },
-          paramsWithBatch: ["userId"]
-        }
-
-        In above example, "post.get" action should be able to serve { userId: ["user-1", "user-2", ...] } params.
-       */
-      paramsWithBatch?: string[]
+      batch?: boolean
 
       /*
         ignoreError: If true, "null" will be returned on error.
@@ -184,12 +137,30 @@ declare namespace APIGateway {
     interface GuardConfig {
       // TODO: 1 GUARD with IAM.USER/ADMIN Context
     }
+
+    // Action Metadata of underlying service.
+    interface ActionMeta extends Moleculer.GenericObject {
+      api?: ActionAPIMeta
+    }
+
+    // Underlying services can use below meta data to deal with requests from API Gateway.
+    interface ActionAPIMeta extends APIRequestContext {
+      graphql: { source: any, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo }
+    }
+
+    interface APIRequestContext {
+      // TODO: guard integration...
+      user: any
+      locale: string
+    }
+
+    // Internal usage
+    interface GraphQLRequestContext extends APIRequestContext {
+      moleculer?: Moleculer.Context
+    }
   }
 
-  interface GraphQLRequestContext {
-    moleculer: Moleculer.Context
-  }
-
+  // internal usage
   interface APISyncRequest extends Moleculer.GenericObject {
     services: UnderlyingService.ServiceSchema[]
     alwaysPreferLatestService: boolean
