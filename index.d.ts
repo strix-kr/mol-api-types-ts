@@ -1,4 +1,4 @@
-import Moleculer from "moleculer";
+import Moleculer  from "moleculer";
 
 declare namespace APIGateway {
 
@@ -182,12 +182,17 @@ declare namespace APIGateway {
 
     // Guard configuration to protect action call via Either GraphQL or REST endpoint.
     interface GuardConfig {
-      // TODO: GUARD...
+      // TODO: 1 GUARD with IAM.USER/ADMIN Context
     }
   }
 
-  namespace GraphQLService {
+  interface GraphQLRequestContext {
+    moleculer: Moleculer.Context
+  }
 
+  interface APISyncRequest extends Moleculer.GenericObject {
+    services: UnderlyingService.ServiceSchema[]
+    alwaysPreferLatestService: boolean
   }
 
   namespace CatalogService {
