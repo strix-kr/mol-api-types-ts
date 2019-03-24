@@ -1,11 +1,17 @@
+import Moleculer from "moleculer";
+
 declare namespace APIGateway {
 
   namespace UnderlyingService {
-    // Metadata of underlying service.
-    interface Metadata {
-      // API Gateway Service will seek only the "api" field of service metadata.
-      api?: APIConfig
-      [key: string]: any
+    interface ServiceSchema extends Moleculer.ServiceSchema {
+      // Metadata of underlying service.
+      metadata?: {
+        // API Gateway Service will seek only the "api" field of service metadata.
+        api?: APIConfig
+
+        // internal usage to compare api configuration between same named services.
+        apiVersion?: string
+      } & Moleculer.GenericObject;
     }
 
     // Service actions will be published by following the given configurations.
@@ -13,12 +19,6 @@ declare namespace APIGateway {
       rest?: RESTConfig
       graphql?: GraphQLConfig
       guard?: GuardConfig
-
-      /*
-        debug: For debugging purpose.
-        If true, API Gateway will always pick this service without load balancing.
-       */
-      debug?: boolean
     }
 
     // Configuration to map service actions to REST endpoints.
@@ -191,9 +191,11 @@ declare namespace APIGateway {
   }
 
   namespace CatalogService {
-    interface ServiceError {
-      service: string
-      errors: string[]
+    interface ServiceReport {
+      service: UnderlyingService.ServiceSchema
+      errors?: any[],
+      warnings?: any[],
+      createdAt?: Date,
     }
   }
 }
