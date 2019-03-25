@@ -1,5 +1,4 @@
 import Moleculer from "moleculer";
-import { GraphQLResolveInfo } from "graphql";
 
 declare namespace APIGateway {
 
@@ -28,7 +27,7 @@ declare namespace APIGateway {
 
     // Service action would get below 'meta' from api gateway.
     interface ActionContextMeta extends Moleculer.GenericObject {
-      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: GraphQLResolveInfo }
+      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: import("graphql").GraphQLResolveInfo }
       user?: any
       locale?: string
     }
@@ -89,6 +88,34 @@ declare namespace APIGateway {
         action: The name of action to map to REST alias.
        */
       action: string
+
+      /*
+        params: Params key/value map to call the given action.
+
+        1) Primitive value mapping.
+        Primitive values can be mapped manually. And this has priority over all other mappings.
+
+        "GET /:id": {
+          action: "iam.user.get",
+          params: {
+            withDisabled: true
+          }
+        }
+
+        2) URL mapping (query string and path).
+        The params option { id: "@.id" } will make resolver to call the action "iam.user.get" with { id: 'id value of the url params' } params.
+        This <URL mapping> is automatically done among same named params without specified configuration.
+
+        "GET /:id": {
+          action: "iam.user.get",
+          params: {
+            id: "@.id"
+          }
+        }
+
+
+       */
+      params?: { [paramName: string]: any }
     }
 
 
@@ -128,7 +155,9 @@ declare namespace APIGateway {
     }
 
     // GraphQL resolver mapping configuration.
-    interface GraphQLResolverConfig {
+    type GraphQLResolverConfig = GraphQLActionResolverConfig  | GraphQLSubscriptionResolverConfig
+
+    interface GraphQLActionResolverConfig {
       /*
         action: The name of action to map to resolver.
        */
@@ -137,17 +166,20 @@ declare namespace APIGateway {
       /*
         params: Params key/value map to call the given action.
 
-        1) Map a param from field params.
-        The params option { id: "@.id" } will make resolver to call the action "post.get" with { userId: 'id value of the field params' } params.
+        1) Primitive value mapping.
+        Primitive values can be mapped manually. And this has priority over all other mappings.
+
         "Query.user": {
           action: "iam.user.get",
           params: {
-            id: "@.id"
+            withDisabled: false
           }
         }
 
-        2) Map a param from the root object props.
-        The params option { userId: "$.id" } will make resolver to call the action "post.get" with { userId: 'id value of the root object props' } params.
+        2) Source object mapping.
+        The params option { userId: "$.id" } will make resolver to call the action "post.get" with { userId: 'value of the source object prop id' } params.
+        This <Source object mapping> is automatically done among same named params without specified configuration.
+
         "User.post": {
           action: "post.get",
           params: {
@@ -155,12 +187,14 @@ declare namespace APIGateway {
           }
         }
 
-        3) Define a param value directly.
-        Otherwise, given primitive value will be used directly to call the action.
+        3) Field arguments mapping.
+        The params option { id: "@.id" } will make resolver to call the action "iam.user.get" with { id: 'value of the field argument id' } params.
+        This <Field arguments mapping> is automatically done among same named params after <Source object mapping> failed without specified configuration.
+
         "Query.user": {
           action: "iam.user.get",
           params: {
-            ignoreDisabledUser: true
+            id: "@.id"
           }
         }
        */
@@ -196,6 +230,10 @@ declare namespace APIGateway {
         ignoreError: If true, "null" will be returned on error.
        */
       ignoreError?: boolean
+    }
+
+    interface GraphQLSubscriptionResolverConfig {
+      event: string
     }
   }
 
