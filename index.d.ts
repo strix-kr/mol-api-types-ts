@@ -19,17 +19,23 @@ declare namespace APIGateway {
       actions:  { [key: string]: Action | ActionHandler }
     }
 
-    // Service Action interface of underlying service.
+    // Service action interface of underlying service.
     interface Action extends Moleculer.Action {
       handler?: ActionHandler;
     }
 
     type ActionHandler<T = any> = ((ctx: Moleculer.Context<Moleculer.GenericObject, ActionContextMeta>) => PromiseLike<T> | T) & ThisType<Moleculer.Service>;
 
+    // Service action would get below 'meta' from api gateway.
     interface ActionContextMeta extends Moleculer.GenericObject {
-      graphql?: { source: any, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo }
+      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: GraphQLResolveInfo }
       user?: any
       locale?: string
+    }
+
+    // equal to action context meta
+    interface ActionGraphQLContext extends Exclude<ActionContextMeta, "graphql"> {
+      moleculer?: Moleculer.Context // internal usage
     }
 
     // Service actions can be published with api configurations in metadata.
@@ -191,11 +197,6 @@ declare namespace APIGateway {
        */
       ignoreError?: boolean
     }
-  }
-
-  // Internal usage
-  interface GraphQLRequestContext {
-    moleculer?: Moleculer.Context
   }
 
   // internal usage
