@@ -27,14 +27,24 @@ declare namespace APIGateway {
 
     // Service action would get below 'meta' from api gateway.
     interface ActionContextMeta extends Moleculer.GenericObject {
-      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: import("graphql").GraphQLResolveInfo }
       user?: any
       locale?: string
+
+      // graphql request information
+      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: import("graphql").GraphQLResolveInfo }
+
+      // assign below fields on the context of action handler to handle the response of API Gateway
+      $responseHeaders?: { [key: string]: string },
+      $statusCode?: number
+      $statusMessage?: string
+      $responseType?: string
+      $location?: string
     }
 
-    // equal to action context meta
+    // equal to action context meta; internal usage
     interface ActionGraphQLContext extends Exclude<ActionContextMeta, "graphql"> {
-      moleculer?: Moleculer.Context // internal usage
+      moleculer?: Moleculer.Context
+      _extensionStack?: any
     }
 
     // Service actions can be published with api configurations in metadata.
@@ -94,26 +104,26 @@ declare namespace APIGateway {
 
         1) Primitive value mapping.
         Primitive values can be mapped manually. And this has priority over all other mappings.
+        Useful to protect internal variables from being implicitly mapped from URL params.
 
         "GET /:id": {
           action: "iam.user.get",
           params: {
-            withDisabled: true
+            withDisabled: false
           }
         }
 
-        2) URL mapping (query string and path).
+        2) URL mapping (path params and query string).
         The params option { id: "@.id" } will make resolver to call the action "iam.user.get" with { id: 'id value of the url params' } params.
-        This <URL mapping> is automatically done among same named params without specified configuration.
+        This <URL mapping> is implicitly tried among same named params without explicit configuration.
+        When the names of path params and query string are conflicted, path params has priority over the query string.
 
         "GET /:id": {
           action: "iam.user.get",
           params: {
-            id: "@.id"
+            withDisabled: "@.disabled"
           }
         }
-
-
        */
       params?: { [paramName: string]: any }
     }
@@ -150,8 +160,17 @@ declare namespace APIGateway {
         "Post.author": {...}
        */
       resolvers: {
-        [field: string]: GraphQLResolverConfig
-      }
+        [fieldName: string]: GraphQLResolverConfig
+      },
+
+      /*
+        nodeResolvers: Optionally define the ways to resolve 'node(id: "type-name:xxx"): Node!' query for the types which implement Node interface.
+
+        "File": {...}
+       */
+      nodeResolvers?: {
+        [typeName: string]: GraphQLActionResolverConfig
+      },
     }
 
     // GraphQL resolver mapping configuration.
@@ -176,25 +195,25 @@ declare namespace APIGateway {
           }
         }
 
-        2) Source object mapping.
-        The params option { userId: "$.id" } will make resolver to call the action "post.get" with { userId: 'value of the source object prop id' } params.
-        This <Source object mapping> is automatically done among same named params without specified configuration.
-
-        "User.post": {
-          action: "post.get",
-          params: {
-            userId: "$.id"
-          }
-        }
-
-        3) Field arguments mapping.
+        2) Field arguments mapping.
         The params option { id: "@.id" } will make resolver to call the action "iam.user.get" with { id: 'value of the field argument id' } params.
-        This <Field arguments mapping> is automatically done among same named params after <Source object mapping> failed without specified configuration.
+        This <Field arguments mapping> is implicitly tried among same named params without explicit configuration.
 
         "Query.user": {
           action: "iam.user.get",
           params: {
             id: "@.id"
+          }
+        }
+
+        3) Source object mapping.
+        The params option { userId: "$.id" } will make resolver to call the action "post.get" with { userId: 'value of the source object prop id' } params.
+        This <Source object mapping> is implicitly tried among same named params without explicit configuration after <Field argument mapping> failed.
+
+        "User.post": {
+          action: "post.get",
+          params: {
+            userId: "$.id"
           }
         }
        */
@@ -227,7 +246,7 @@ declare namespace APIGateway {
       paramsWithBatch?: string[]
 
       /*
-        ignoreError: If true, "null" will be returned on error.
+        ignoreError: If true, "null" will be returned on error. Not affected on non-nullable fields.
        */
       ignoreError?: boolean
     }
