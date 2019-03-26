@@ -4,8 +4,7 @@ declare namespace APIGateway {
 
   namespace UnderlyingService {
 
-    /** Basic Usage **/
-    // Service schema of underlying service.
+    /* Service schema of underlying service. */
     interface ServiceSchema extends Moleculer.ServiceSchema {
       // Metadata of underlying service.
       metadata?: {
@@ -19,13 +18,13 @@ declare namespace APIGateway {
       actions:  { [key: string]: Action | ActionHandler }
     }
 
-    // Service actions can be published with api configurations in metadata.
+    /* Service actions can be published with api configurations in metadata. */
     interface APIConfig {
       rest?: RESTConfig
       graphql?: GraphQLConfig
     }
 
-    // Configuration to map service actions to REST endpoints.
+    /* Configuration to map service actions to REST endpoints. */
     interface RESTConfig {
       /*
         path: Optional root path for underlying service.
@@ -64,7 +63,7 @@ declare namespace APIGateway {
       }
     }
 
-    // REST alias mapping configuration.
+    /* REST alias mapping configuration. */
     interface RESTAliasConfig {
       /*
         action: The name of action to map to REST alias.
@@ -100,7 +99,7 @@ declare namespace APIGateway {
       params?: { [paramName: string]: any }
     }
 
-    // Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver.
+    /* Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver. */
     interface GraphQLConfig {
       /*
         typeDefs: Either a string or strings which defines the GraphQL schema for the service.
@@ -144,7 +143,7 @@ declare namespace APIGateway {
       },
     }
 
-    // GraphQL resolver mapping configuration.
+    /* GraphQL resolver mapping configuration. */
     type GraphQLResolverConfig = GraphQLActionResolverConfig  | GraphQLSubscriptionResolverConfig
 
     interface GraphQLActionResolverConfig {
@@ -227,8 +226,7 @@ declare namespace APIGateway {
     }
 
 
-    /** Advanced Usage **/
-    // Service action would get below 'meta' from api gateway.
+    /* Service action would get below 'meta' from api gateway. */
     interface ActionContextMeta extends Moleculer.GenericObject {
       /* User data */
       user: any
@@ -252,9 +250,7 @@ declare namespace APIGateway {
         To transform HTTP response of API Gateway, assign 'ctx.meta.$http' field in action handler.
         This transformation will not be applied when action called via GraphQL schema.
 
-        eg.
-
-        // TODO: (0) REST response conversion
+        eg. from action definition.
 
         handler({ meta }) {
           // 1) make redirect response.
@@ -294,7 +290,6 @@ declare namespace APIGateway {
       _extensionStack?: any
     }
 
-    /** Internal **/
     interface Action extends Moleculer.Action {
       handler?: ActionHandler;
     }
@@ -310,12 +305,12 @@ declare namespace APIGateway {
 
   namespace CatalogService {
     /*
-      Report from API Gateway
+      Subscribe reports from API Gateway:
 
       Subscribe to 'api.catalog.report.<serviceName>' to get messages form API Gateway.
 
-      eg.
-      // subscribe eventsgit
+      eg. from service schema.
+
       events: {
         // listen to messages from API Gateway toward this service
         "api.catalog.report.<serviceName>"(report: CatalogService.ServiceReport) {
