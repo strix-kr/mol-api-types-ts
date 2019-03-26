@@ -4,6 +4,7 @@ declare namespace APIGateway {
 
   namespace UnderlyingService {
 
+    /** Basic Usage **/
     // Service schema of underlying service.
     interface ServiceSchema extends Moleculer.ServiceSchema {
       // Metadata of underlying service.
@@ -16,35 +17,6 @@ declare namespace APIGateway {
       } & Moleculer.GenericObject
 
       actions:  { [key: string]: Action | ActionHandler }
-    }
-
-    // Service action interface of underlying service.
-    interface Action extends Moleculer.Action {
-      handler?: ActionHandler;
-    }
-
-    type ActionHandler<T = any> = ((ctx: Moleculer.Context<Moleculer.GenericObject, ActionContextMeta>) => PromiseLike<T> | T) & ThisType<Moleculer.Service>;
-
-    // Service action would get below 'meta' from api gateway.
-    interface ActionContextMeta extends Moleculer.GenericObject {
-      user?: any
-      locale?: string
-
-      // graphql request information
-      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: import("graphql").GraphQLResolveInfo }
-
-      // assign below fields on the context of action handler to handle the response of API Gateway
-      $responseHeaders?: { [key: string]: string },
-      $statusCode?: number
-      $statusMessage?: string
-      $responseType?: string
-      $location?: string
-    }
-
-    // equal to action context meta; internal usage
-    interface ActionGraphQLContext extends Exclude<ActionContextMeta, "graphql"> {
-      moleculer?: Moleculer.Context
-      _extensionStack?: any
     }
 
     // Service actions can be published with api configurations in metadata.
@@ -127,7 +99,6 @@ declare namespace APIGateway {
        */
       params?: { [paramName: string]: any }
     }
-
 
     // Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver.
     interface GraphQLConfig {
@@ -254,6 +225,81 @@ declare namespace APIGateway {
     interface GraphQLSubscriptionResolverConfig {
       event: string
     }
+
+
+    /** Advanced Usage **/
+    // Service action would get below 'meta' from api gateway.
+    interface ActionContextMeta extends Moleculer.GenericObject {
+      /* User data */
+      user: any
+
+      /* Locale data */
+      locale: string
+
+      /* UserAgent data */
+      userAgent: any
+
+      /*
+        GraphQL request information:
+
+        This field would be field when action called via GraphQL schema.
+      */
+      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: import("graphql").GraphQLResolveInfo }
+
+      /*
+        HTTP response transformation:
+
+        To transform HTTP response of API Gateway, assign 'ctx.meta.$http' field in action handler.
+        This transformation will not be applied when action called via GraphQL schema.
+
+        eg.
+
+        // TODO: (0) REST response conversion
+
+        handler({ meta }) {
+          // 1) make redirect response.
+          meta.$http = {
+            statusCode: 301,
+            headers: {
+              "Location": "https://gooble.com",
+            },
+          };
+          return;
+
+          // 2) make download response.
+          meta.$http = {
+            "Content-Disposition": "attachment; filename=\"anyFile.pdf\"",
+          };
+          return fileStream;
+
+          // 3) make HTML response.
+          meta.$http = {
+            "Content-Type": "text/html",
+          };
+          return "<html>....</html>";
+        }
+      */
+      $http?: HTTPResponseConfig
+    }
+
+    interface HTTPResponseConfig {
+      headers?: { [key: string]: string }
+      statusCode?: number
+      statusMessage?: string
+    }
+
+    // equal to action context meta; internal usage
+    interface ActionGraphQLContext extends Exclude<ActionContextMeta, "graphql"> {
+      moleculer?: Moleculer.Context
+      _extensionStack?: any
+    }
+
+    /** Internal **/
+    interface Action extends Moleculer.Action {
+      handler?: ActionHandler;
+    }
+
+    type ActionHandler<T = any> = ((ctx: Moleculer.Context<Moleculer.GenericObject, ActionContextMeta>) => PromiseLike<T> | T) & ThisType<Moleculer.Service>;
   }
 
   // internal usage
@@ -263,11 +309,12 @@ declare namespace APIGateway {
   }
 
   namespace CatalogService {
+    // report from API Gateway
     interface ServiceReport {
+      global: boolean,
       service: UnderlyingService.ServiceSchema
-      errors?: any[],
-      warnings?: any[],
-      createdAt?: Date,
+      messages: any[],
+      createdAt: Date,
     }
   }
 }
