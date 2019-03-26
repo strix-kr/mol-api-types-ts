@@ -312,7 +312,8 @@ declare namespace APIGateway {
     // report from API Gateway
     interface ServiceReport {
       global: boolean
-      service: string
+      serviceName: string
+      gatewayNodeID: string
       messages: any[]
       createdAt: Date
     }
