@@ -311,10 +311,10 @@ declare namespace APIGateway {
   namespace CatalogService {
     // report from API Gateway
     interface ServiceReport {
-      global: boolean,
-      service: UnderlyingService.ServiceSchema
-      messages: any[],
-      createdAt: Date,
+      global: boolean
+      service: string
+      messages: any[]
+      createdAt: Date
     }
   }
 }
