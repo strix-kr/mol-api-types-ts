@@ -309,9 +309,46 @@ declare namespace APIGateway {
   }
 
   namespace CatalogService {
-    // report from API Gateway
+    /*
+      Report from API Gateway
+
+      Subscribe to 'api.catalog.report.<serviceName>' to get messages form API Gateway.
+
+      eg.
+      // subscribe eventsgit
+      events: {
+        // listen to messages from API Gateway toward this service
+        "api.catalog.report.<serviceName>"(report: CatalogService.ServiceReport) {
+          this.logger.info(`[Gateway@${report.gatewayNodeID} => ${report.serviceName}]`, report.messages);
+        },
+
+        // listen to related service messages
+        "api.catalog.report.<serviceName>**"(report: CatalogService.ServiceReport) {
+          // ...
+        },
+
+        // listen to all the messages from API Gateway
+        "api.catalog.report.**"(report: CatalogService.ServiceReport) {
+          // ...
+        },
+
+        // listen to api gateway status messages
+        "api.catalog.report.api"(report: CatalogService.ServiceReport) {
+          // ...
+        },
+
+        // listen to api gateway GraphQL server related messages
+        "api.catalog.report.api.graphql"(report: CatalogService.ServiceReport) {
+          // ...
+        },
+
+        // listen to both
+        "api.catalog.report.api**"(report: CatalogService.ServiceReport) {
+          // ...
+        },
+      },
+    */
     interface ServiceReport {
-      global: boolean
       serviceName: string
       gatewayNodeID: string
       messages: any[]
