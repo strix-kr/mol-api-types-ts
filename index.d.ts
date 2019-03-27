@@ -35,7 +35,7 @@ declare namespace APIGateway {
       path?: string
 
       /*
-        aliases: Map actions to REST endpoint.
+        aliases: Map actions to REST endpoint. All available alias methods are GET|HEAD|PUT|PATCH|POST|DELETE|(all for empty).
 
         "POST login": "iam.user.issueToken"
         => POST /users/login        => iam.user.issueToken
@@ -84,10 +84,7 @@ declare namespace APIGateway {
           }
         }
 
-        2) URL mapping (path params and query string).
-        The params option { id: "@.id" } will make resolver to call the action "iam.user.get" with { id: 'id value of the url params' } params.
-        This <URL mapping> is implicitly tried among same named params without explicit configuration.
-        When the names of path params and query string are conflicted, path params has priority over the query string.
+        2) HTTP params mapping.
 
         "GET /:id": {
           action: "iam.user.get",
@@ -95,8 +92,35 @@ declare namespace APIGateway {
             withDisabled: "@.disabled"
           }
         }
+
+        At first, path params is extracted as { id: 'string from part of URL path /:id' }.
+        Be noted that the type of this value will be always string.
+
+        Then, from a request of GET method:
+          The params option { withDisabled: "@.disabled" } will make param { withDisabled: 'disabled value of the url query' } params.
+          And here query string key is matched by in-case-sensitive.
+          Also only for query string params, REST action resolver will cast param type to proper type to service action definition.
+
+        And, from a request of other methods:
+          Other params will be extracted from JSON body.
+
+        This <HTTP params mapping> is implicitly tried among same named params without explicit configuration.
+        When the names of path and query string are conflicted, path params has priority over the query string and body params.
        */
       params?: { [paramName: string]: any }
+
+
+      /*
+        multipart: File upload from HTML multipart form.
+
+        All params will be ignored and action handler will got
+      */
+      multipart?: boolean
+
+      /*
+        stream: File upload from AJAX or cURL.
+      */
+      stream?: boolean
     }
 
     /* Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver. */
@@ -242,46 +266,54 @@ declare namespace APIGateway {
 
         This field would be field when action called via GraphQL schema.
       */
-      graphql?: { source: any, args: any, context: ActionGraphQLContext, info: import("graphql").GraphQLResolveInfo }
+      graphql?: {
+        source: any
+        args: any
+        context: ActionGraphQLContext
+        info: import("graphql").GraphQLResolveInfo
+      }
 
       /*
         HTTP response transformation:
 
         To transform HTTP response of API Gateway, assign 'ctx.meta.$http' field in action handler.
         This transformation will not be applied when action called via GraphQL schema.
+        Be noted that when the action has been called via GraphQL resolver, '$http' will be ignored by API Gateway.
 
         eg. from action definition.
 
         handler({ meta }) {
-          // 1) make redirect response.
+          // 1) make a redirect response.
           meta.$http = {
             statusCode: 301,
             headers: {
-              "Location": "https://gooble.com",
+              "Location": "https://google.com",
             },
           };
           return;
 
-          // 2) make download response.
+          // 2) make a download response.
           meta.$http = {
-            "Content-Disposition": "attachment; filename=\"anyFile.pdf\"",
+            headers: {
+              "Content-Disposition": "attachment; filename=\"anyFile.pdf\"",
+            },
           };
-          return fileStream;
+          return fileStream; // ref: https://moleculer.services/docs/0.13/actions.html#Streaming
 
-          // 3) make HTML response.
+          // 3) make a HTML document response.
           meta.$http = {
-            "Content-Type": "text/html",
+            headers: {
+              "Content-Type": "text/html",
+            },
           };
           return "<html>....</html>";
         }
       */
-      $http?: HTTPResponseConfig
-    }
-
-    interface HTTPResponseConfig {
-      headers?: { [key: string]: string }
-      statusCode?: number
-      statusMessage?: string
+      $http?: {
+        headers?: { [key: string]: string }
+        statusCode?: number
+        statusMessage?: string
+      }
     }
 
     // equal to action context meta; internal usage
