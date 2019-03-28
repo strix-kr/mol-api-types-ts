@@ -72,40 +72,75 @@ declare namespace APIGateway {
 
       /*
         params: Params key/value map to call the given action.
+        All mapping policies will be implicitly tried among same named params without explicit configuration.
 
-        1) Primitive value mapping.
-        Primitive values can be mapped manually. And this has priority over all other mappings.
-        Useful to protect internal variables from being implicitly mapped from URL params.
+        Mapping policies ordered by priority:
 
-        "GET /:id": {
-          action: "iam.user.get",
-          params: {
-            withDisabled: false
+          1) Manual value mapping.
+          Any values can be mapped manually.
+          Useful to protect internal variables from being mapped implicitly.
+
+          "GET /": {
+            action: "iam.user.list",
+            params: {
+              withDisabled: false,
+              options: {
+                limit: 10,
+              }
+            }
           }
-        }
 
-        2) HTTP params mapping.
+          2) URL path mapping.
+          Aliased URL paths will be mapped.
+          Be noted that the type of path values will be always string.
 
-        "GET /:id": {
-          action: "iam.user.get",
-          params: {
-            withDisabled: "@.disabled"
+          "GET /:id": {
+            action: "iam.user.get",
+            params: {
+              id: "$.id"
+            }
           }
-        }
 
-        At first, path params is extracted as { id: 'string from part of URL path /:id' }.
-        Be noted that the type of this value will be always string.
+          3) Request body mapping.
+          Parsed JSON of request body will be mapped.
+          Same named object param from (3) will be recursively merged with (1) Manual value.
 
-        Then, from a request of GET method:
-          The params option { withDisabled: "@.disabled" } will make param { withDisabled: 'disabled value of the url query' } params.
-          And here query string key is matched by in-case-sensitive.
-          Also only for query string params, REST action resolver will cast param type to proper type to service action definition.
+          "POST /:id": {
+            action: "iam.user.create",
+            params: {
+              payload: "@.user",
+              options: "@.opts"
+            }
+          }
 
-        And, from a request of other methods:
-          Other params will be extracted from JSON body.
+          4) URL query string mapping.
+          Parsed URL query string will be mapped.
+            - URL can be extended like "obj[x]=1&obj[y]=2&arr[]=abc&arr[]=def".
+            - Be noted that the type of query string values will be always string.
+          Same named object param from (4) will be recursively merged with (1) Manual value.
 
-        This <HTTP params mapping> is implicitly tried among same named params without explicit configuration.
-        When the names of path and query string are conflicted, path params has priority over the query string and body params.
+          "GET /:id": {
+            action: "iam.user.get",
+            params: {
+              options: "@.opts",
+              filter: "@.filter",
+            }
+          }
+
+        Type casting:
+
+          Any string value of URL path and query string can be casted to boolean|number types.
+
+          "GET /:id": {
+            action: "iam.user.get",
+            params: {
+              id: "$.id#number",
+              withDisabled: "@.disabled#boolean"
+            }
+          }
+
+          Above configuration will make params like { id: 123, withDisabled: true }
+
        */
       params?: { [paramName: string]: any }
 
@@ -113,14 +148,24 @@ declare namespace APIGateway {
       /*
         multipart: File upload from HTML multipart form.
 
-        All params will be ignored and action handler will got
+        TODO multipart support
       */
-      multipart?: boolean
+      multipart?: boolean|RESTAliasMultipartConfig
 
       /*
         stream: File upload from AJAX or cURL.
+
+        TODO stream support
       */
-      stream?: boolean
+      stream?: boolean|RESTAliasStreamConfig
+    }
+
+    interface RESTAliasMultipartConfig {
+
+    }
+
+    interface RESTAliasStreamConfig {
+
     }
 
     /* Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver. */
@@ -178,38 +223,54 @@ declare namespace APIGateway {
 
       /*
         params: Params key/value map to call the given action.
+        All mapping policies will be implicitly tried among same named params without explicit configuration.
 
-        1) Primitive value mapping.
-        Primitive values can be mapped manually. And this has priority over all other mappings.
+        Mapping policies ordered by priority:
 
-        "Query.user": {
-          action: "iam.user.get",
-          params: {
-            withDisabled: false
+          1) Manual value mapping.
+          Any values can be mapped manually.
+          Useful to protect internal variables from being mapped implicitly.
+
+          "Mutation.createMyUser": {
+            action: "iam.user.create",
+            params: {
+              input: {
+                phone: null,
+                disabled: false,
+                isAdmin: false,
+                my: {
+                  role: "member",
+                  settings: {
+                    notification: false
+                  },
+                }
+              }
+            }
+
+          2) Field arguments mapping.
+          The field arguments (from request variables) will be mapped.
+          Same named object param from (2) will be recursively merged with (1) Manual value.
+
+          "Mutation,createMyUser": {
+            action: "iam.user.create",
+            params: {
+              input: "@.input"
+            }
           }
-        }
 
-        2) Field arguments mapping.
-        The params option { id: "@.id" } will make resolver to call the action "iam.user.get" with { id: 'value of the field argument id' } params.
-        This <Field arguments mapping> is implicitly tried among same named params without explicit configuration.
+          3) Source object mapping.
+          The property of source object will be mapped.
+          Same named object param from (3) will be recursively merged with (1) Manual value.
 
-        "Query.user": {
-          action: "iam.user.get",
-          params: {
-            id: "@.id"
+          "User.post": {
+            action: "post.get",
+            params: {
+              userId: "$.id"
+            }
           }
-        }
 
-        3) Source object mapping.
-        The params option { userId: "$.id" } will make resolver to call the action "post.get" with { userId: 'value of the source object prop id' } params.
-        This <Source object mapping> is implicitly tried among same named params without explicit configuration after <Field argument mapping> failed.
+          Above configuration will make params like { userId: 'if of the source user object' }
 
-        "User.post": {
-          action: "post.get",
-          params: {
-            userId: "$.id"
-          }
-        }
        */
       params?: { [paramName: string]: any }
 
@@ -308,6 +369,7 @@ declare namespace APIGateway {
           };
           return "<html>....</html>";
         }
+
       */
       $http?: {
         headers?: { [key: string]: string }
