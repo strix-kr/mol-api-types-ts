@@ -313,14 +313,11 @@ declare namespace APIGateway {
 
     /* Service action would get below 'meta' from api gateway. */
     interface ActionContextMeta extends Moleculer.GenericObject {
-      /* User data */
+      /* User */
       user: any
 
-      /* Locale data */
+      /* Locale */
       locale: string
-
-      /* UserAgent data */
-      userAgent: any
 
       /*
         GraphQL request information:
@@ -335,17 +332,29 @@ declare namespace APIGateway {
       }
 
       /*
-        HTTP response transformation:
+        REST request information:
 
-        To transform HTTP response of API Gateway, assign 'ctx.meta.$http' field in action handler.
-        This transformation will not be applied when action called via GraphQL schema.
-        Be noted that when the action has been called via GraphQL resolver, '$http' will be ignored by API Gateway.
+      */
+      rest?: {
+        headers: { [key: string]: any }
+        cookies: { [key: string]: any }
+        $response?: RESTResponseConfig
+      }
+    }
 
-        eg. from action definition.
+    /*
+      HTTP response transformation:
 
-        handler({ meta }) {
+      To transform HTTP response of API Gateway, assign 'ctx.meta.rest' field in action handler.
+      This transformation will not be applied when action called via GraphQL schema.
+      Be noted that when the action has been called via GraphQL resolver, 'rest' will be ignored by API Gateway.
+
+      eg. from action definition.
+
+      handler({ meta }) {
+        if (meta.rest) {
           // 1) make a redirect response.
-          meta.$http = {
+          meta.rest.$response = {
             statusCode: 301,
             headers: {
               "Location": "https://google.com",
@@ -354,7 +363,7 @@ declare namespace APIGateway {
           return;
 
           // 2) make a download response.
-          meta.$http = {
+          meta.rest.$response = {
             headers: {
               "Content-Disposition": "attachment; filename=\"anyFile.pdf\"",
             },
@@ -362,7 +371,7 @@ declare namespace APIGateway {
           return fileStream; // ref: https://moleculer.services/docs/0.13/actions.html#Streaming
 
           // 3) make a HTML document response.
-          meta.$http = {
+          meta.rest.$response = {
             headers: {
               "Content-Type": "text/html",
             },
@@ -370,12 +379,13 @@ declare namespace APIGateway {
           return "<html>....</html>";
         }
 
-      */
-      $http?: {
-        headers?: { [key: string]: string }
-        statusCode?: number
-        statusMessage?: string
+        // ...
       }
+    */
+    interface RESTResponseConfig {
+      headers?: { [key: string]: string }
+      statusCode?: number
+      statusMessage?: string
     }
 
     // equal to action context meta; internal usage
