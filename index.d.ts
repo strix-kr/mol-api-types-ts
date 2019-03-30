@@ -54,9 +54,6 @@ declare namespace APIGateway {
            POST   /users            => iam.user.create
            PUT    /users            => iam.user.update
            DELETE /users/:id        => iam.user.remove
-
-        "/some/path": "iam.user.any"
-        => *      /users/some/path  => iam.user.any
       */
       aliases: {
         [alias: string]: RESTAliasConfig
