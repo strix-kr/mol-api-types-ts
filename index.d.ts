@@ -26,6 +26,8 @@ declare namespace APIGateway {
 
     /* Configuration to map service actions to REST endpoints. */
     interface RESTConfig {
+      description?: string
+
       /*
         path: Optional root path for underlying service.
 
@@ -62,6 +64,8 @@ declare namespace APIGateway {
 
     /* REST alias mapping configuration. */
     interface RESTAliasConfig {
+      description?: string
+
       /*
         action: The name of action to map to REST alias.
        */
@@ -140,33 +144,20 @@ declare namespace APIGateway {
 
        */
       params?: { [paramName: string]: any }
-
-
-      /*
-        multipart: File upload from HTML multipart form.
-
-        TODO multipart support
-      */
-      multipart?: boolean|RESTAliasMultipartConfig
-
-      /*
-        stream: File upload from AJAX or cURL.
-
-        TODO stream support
-      */
-      stream?: boolean|RESTAliasStreamConfig
     }
 
-    interface RESTAliasMultipartConfig {
-
-    }
-
-    interface RESTAliasStreamConfig {
-
+    /* File from multipart/form-data content will be parsed as MultipartFile object in params */
+    interface MultipartFile {
+      name: string
+      buffer: string
+      encoding: string
+      contentType: string
     }
 
     /* Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver. */
     interface GraphQLConfig {
+      description?: string
+
       /*
         typeDefs: Either a string or strings which defines the GraphQL schema for the service.
 
@@ -210,9 +201,11 @@ declare namespace APIGateway {
     }
 
     /* GraphQL resolver mapping configuration. */
-    type GraphQLResolverConfig = GraphQLActionResolverConfig  | GraphQLSubscriptionResolverConfig
+    type GraphQLResolverConfig = GraphQLActionResolverConfig | GraphQLSubscriptionResolverConfig
 
     interface GraphQLActionResolverConfig {
+      description?: string
+
       /*
         action: The name of action to map to resolver.
        */
@@ -304,6 +297,9 @@ declare namespace APIGateway {
     }
 
     interface GraphQLSubscriptionResolverConfig {
+      description?: string
+
+      // TODO: support graphql subscription
       event: string
     }
 
@@ -330,7 +326,6 @@ declare namespace APIGateway {
 
       /*
         REST request information:
-
       */
       rest?: {
         headers: { [key: string]: any }
@@ -344,7 +339,7 @@ declare namespace APIGateway {
 
       To transform HTTP response of API Gateway, assign 'ctx.meta.rest' field in action handler.
       This transformation will not be applied when action called via GraphQL schema.
-      Be noted that when the action has been called via GraphQL resolver, 'rest' will be ignored by API Gateway.
+      Be noted that when the action has been called via GraphQL resolver, 'rest' will be override by API Gateway GraphQL service.
 
       eg. from action definition.
 
@@ -415,7 +410,7 @@ declare namespace APIGateway {
       events: {
         // listen to messages from API Gateway toward this service
         "api.catalog.report.<serviceName>"(report: CatalogService.ServiceReport) {
-          this.logger.info(`[Gateway@${report.gatewayNodeID} => ${report.serviceName}]`, report.messages);
+          this.logger.info(`[Gateway@${report.gatewayNodeID} => ${report.serviceName}]`, JSON.stringify(report, null, 2));
         },
 
         // listen to related service messages
