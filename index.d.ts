@@ -146,14 +146,6 @@ declare namespace APIGateway {
       params?: { [paramName: string]: any }
     }
 
-    /* File from multipart/form-data content will be parsed as MultipartFile object in params */
-    interface MultipartFile {
-      name: string
-      buffer: string
-      encoding: string
-      contentType: string
-    }
-
     /* Configuration to extends GraphQL schema and map service actions to GraphQL schema resolver. */
     interface GraphQLConfig {
       description?: string
@@ -299,10 +291,24 @@ declare namespace APIGateway {
     interface GraphQLSubscriptionResolverConfig {
       description?: string
 
-      // TODO: support graphql subscription
+      /*
+        event: The name of moleculer event name to subscribe.
+       */
       event: string
+
+      /*
+        filter: The name of action to optionally filter event with given payload.
+       */
+      filter?: string
     }
 
+    /* File from multipart/form-data (REST, GraphQL both) content will be parsed as MultipartFile object in params */
+    interface MultipartFile {
+      name: string
+      buffer: string
+      encoding: string
+      contentType: string
+    }
 
     /* Service action would get below 'meta' from api gateway. */
     interface ActionContextMeta extends Moleculer.GenericObject {
