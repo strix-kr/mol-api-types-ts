@@ -288,6 +288,12 @@ declare namespace APIGateway {
       ignoreError?: boolean
     }
 
+    interface GraphQLSubscriptionSource {
+      event: string
+      payload: any
+      nodeID: string
+    }
+
     interface GraphQLSubscriptionResolverConfig {
       description?: string
 
@@ -298,7 +304,7 @@ declare namespace APIGateway {
 
       /*
         filterAction: The name of action to optionally filter the event with payload.
-        Given action should return boolean value from { eventName, eventPayload, filterArgs } params.
+        Given action should return boolean value from { source: GraphQLSubscriptionSource, args: any } params.
 
         if the filterAction is not given, resolver will always publish events.
        */
@@ -315,7 +321,7 @@ declare namespace APIGateway {
         params: Params key/value map to call the given action.
 
         The mapping mechanism is same with regular resolver.
-        But the params "source object"($) notation will be mapped with "event payload" not the "source object".
+        But the params "source object"($) notation will be mapped with { eventName, eventPayload } object.
 
         eg.
 
@@ -323,7 +329,7 @@ declare namespace APIGateway {
           event: "noti.sent",
           action: "noti.get",
           params: {
-            id: "$.id",
+            id: "$.payload.id",
           },
         }
 
@@ -442,6 +448,11 @@ declare namespace APIGateway {
         [key: string]: any
       }
       [key: string]: any
+    }
+
+    // internal/client-side usage
+    interface GraphQLWebSocketConnectionParams {
+      idToken?: string
     }
 
     interface Action extends Moleculer.Action {
