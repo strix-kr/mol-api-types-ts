@@ -188,14 +188,14 @@ declare namespace APIGateway {
         "File": {...}
        */
       nodeResolvers?: {
-        [typeName: string]: GraphQLActionResolverConfig
+        [typeName: string]: GraphQLObjectResolverConfig
       },
     }
 
     /* GraphQL resolver mapping configuration. */
-    type GraphQLResolverConfig = GraphQLActionResolverConfig | GraphQLSubscriptionResolverConfig
+    type GraphQLResolverConfig = GraphQLObjectResolverConfig | GraphQLSubscriptionResolverConfig
 
-    interface GraphQLActionResolverConfig {
+    interface GraphQLObjectResolverConfig {
       description?: string
 
       /*
@@ -297,9 +297,46 @@ declare namespace APIGateway {
       event: string
 
       /*
-        filter: The name of action to optionally filter event with given payload.
+        filterAction: The name of action to optionally filter the event with payload.
+        Given action should return boolean value from { eventName, eventPayload, filterArgs } params.
+
+        if the filterAction is not given, resolver will always publish events.
        */
-      filter?: string
+      filterAction?: string
+
+      /*
+        action: The name of action to call with event payload.
+
+        if the action is not given, resolver will just return the raw event payload.
+       */
+      action?: string
+
+      /*
+        params: Params key/value map to call the given action.
+
+        The mapping mechanism is same with regular resolver.
+        But the params "source object"($) notation will be mapped with "event payload" not the "source object".
+
+        eg.
+
+        "Subscription.notification": {
+          event: "noti.sent",
+          action: "noti.get",
+          params: {
+            id: "$.id",
+          },
+        }
+
+        somewhere, an event has been emitted as like:
+
+        this.broker.broadcast("noti.sent", { id: "xxx" })
+
+
+        then the "Subscription.notification" resolver will call "noti.get" with { id: "xxx" } params.
+       */
+      params?: { [paramName: string]: any }
+
+      ignoreError?: boolean
     }
 
     /* File from multipart/form-data (REST, GraphQL both) content will be parsed as MultipartFile object in params */
@@ -312,6 +349,10 @@ declare namespace APIGateway {
 
     /* Service action would get below 'meta' from api gateway. */
     interface ActionContextMeta extends Moleculer.GenericObject {
+      api: APIRequestContext
+    }
+
+    interface APIRequestContext {
       /* User */
       user: any
 
@@ -319,24 +360,26 @@ declare namespace APIGateway {
       locale: string
 
       /*
+        REST request information:
+
+        This field would be filled when action called via REST endpoint.
+      */
+      rest: {
+        headers: { [key: string]: any }
+        cookies: { [key: string]: any }
+        $response?: RESTResponseConfig
+      }
+
+      /*
         GraphQL request information:
 
-        This field would be field when action called via GraphQL schema.
+        This field would be filled when action called via GraphQL schema.
       */
       graphql?: {
         source: any
         args: any
-        context: ActionGraphQLContext
+        context: GraphQLRequestContext
         info: import("graphql").GraphQLResolveInfo
-      }
-
-      /*
-        REST request information:
-      */
-      rest?: {
-        headers: { [key: string]: any }
-        cookies: { [key: string]: any }
-        $response?: RESTResponseConfig
       }
     }
 
@@ -386,10 +429,19 @@ declare namespace APIGateway {
       statusMessage?: string
     }
 
-    // equal to action context meta; internal usage
-    interface ActionGraphQLContext extends Exclude<ActionContextMeta, "graphql"> {
-      moleculer?: Moleculer.Context
+    // internal usage (it wraps APIRequestContext)
+    interface GraphQLRequestContext extends Exclude<APIRequestContext, "graphql"> {
+      _moleculerContext: Moleculer.Context
       _extensionStack?: any
+    }
+
+    // internal usage (it wraps GraphQLRequestContext)
+    interface GraphQLSubscriptionRequestContext {
+      connection: {
+        context: GraphQLRequestContext
+        [key: string]: any
+      }
+      [key: string]: any
     }
 
     interface Action extends Moleculer.Action {
