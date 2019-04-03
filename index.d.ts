@@ -177,15 +177,25 @@ declare namespace APIGateway {
         "Query.user": {...}
         "User.posts": {...}
         "Post.author": {...}
+
+        or
+
+        Query: {
+          user: { ... }
+        }
        */
       resolvers: {
-        [fieldName: string]: GraphQLResolverConfig
+        [typeOrFieldName: string]: GraphQLResolverConfig | { [fieldOnlyName: string]: GraphQLResolverConfig }
       },
 
       /*
         nodeResolvers: Optionally define the ways to resolve 'node(id: "type-name:xxx"): Node!' query for the types which implement Node interface.
 
         "File": {...}
+
+        or
+
+        "File": "file.get"
        */
       nodeResolvers?: {
         [typeName: string]: GraphQLObjectResolverConfig
@@ -289,7 +299,7 @@ declare namespace APIGateway {
     }
 
     interface GraphQLSubscriptionSource {
-      event: string // TODO: string[]|string
+      event: string
       payload: any
       nodeID: string
     }
@@ -298,9 +308,9 @@ declare namespace APIGateway {
       description?: string
 
       /*
-        event: The name of moleculer event name to subscribe.
+        event: The name of moleculer event(s) to subscribe.
        */
-      event: string
+      event: string|string[]
 
       /*
         filterAction: The name of action to optionally filter the event with payload.
