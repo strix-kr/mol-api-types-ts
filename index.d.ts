@@ -513,6 +513,9 @@ declare namespace APIGateway {
       gatewayNodeID: string
       messages: any[]
       createdAt: Date
+
+      // prevent message from being published to GraphQL subscription channel.
+      $stopPropagation?: boolean
     }
   }
 }
