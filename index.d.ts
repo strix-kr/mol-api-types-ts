@@ -289,7 +289,7 @@ declare namespace APIGateway {
     }
 
     interface GraphQLSubscriptionSource {
-      event: string
+      event: string // TODO: string[]|string
       payload: any
       nodeID: string
     }
