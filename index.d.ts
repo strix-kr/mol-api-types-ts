@@ -485,7 +485,9 @@ declare namespace APIGateway {
       events: {
         // listen to messages from API Gateway toward this service
         "api.catalog.report.<serviceName>"(report: CatalogService.ServiceReport) {
-          this.logger.info(`[Gateway@${report.gatewayNodeID} => ${report.serviceName}]`, JSON.stringify(report, null, 2));
+          if (report.serviceNodeID == this.broker.nodeID) {
+            this.logger[report.type || "info"](`[Gateway@${report.gatewayNodeID} => ${report.serviceName}@${report.serviceNodeID}]`, JSON.stringify(report.messages, null, 2));
+          }
         },
 
         // listen to related service messages
@@ -500,12 +502,12 @@ declare namespace APIGateway {
 
         // listen to api gateway status messages
         "api.catalog.report.api"(report: CatalogService.ServiceReport) {
-          // ...
+          this.logger[report.type || "error"](`[Gateway@${report.gatewayNodeID} => ${report.serviceName}@${report.serviceNodeID}]`, JSON.stringify(report.messages, null, 2));
         },
 
         // listen to api gateway GraphQL server related messages
         "api.catalog.report.api.graphql"(report: CatalogService.ServiceReport) {
-          // ...
+          this.logger[report.type || "error"](`[Gateway@${report.gatewayNodeID} => ${report.serviceName}@${report.serviceNodeID}]`, JSON.stringify(report.messages, null, 2));
         },
 
         // listen to both
