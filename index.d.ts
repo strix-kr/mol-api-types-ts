@@ -517,6 +517,8 @@ declare namespace APIGateway {
     interface ServiceReport {
       serviceName: string
       gatewayNodeID: string
+      serviceNodeID: string
+      type: "warn" | "info" | "error"
       messages: any[]
       createdAt: Date
 
