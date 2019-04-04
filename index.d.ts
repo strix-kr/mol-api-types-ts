@@ -31,8 +31,8 @@ declare namespace APIGateway {
       /*
         path: Optional root path for underlying service.
 
-        If service name is "iam.user" and "users" is given as path, "/users/*" will be routed for the service.
-        otherwise, "/iam.user/*" will be routed for the service endpoints.
+        If service name is "iam.user" and "/users" is given as path, "/users/*" will be routed for the service.
+        otherwise, "/iam/user/*" will be routed for the service endpoints.
       */
       path?: string
 
@@ -135,8 +135,8 @@ declare namespace APIGateway {
           "GET /:id": {
             action: "iam.user.get",
             params: {
-              id: "$.id#number",
-              withDisabled: "@.disabled#boolean"
+              id: "$.id:number",
+              withDisabled: "@.disabled:boolean"
             }
           }
 
@@ -169,23 +169,23 @@ declare namespace APIGateway {
         }
         `
       */
-      typeDefs: string | string[]
+      typeDefs: string
 
       /*
         resolvers: Defines the ways to resolve the given schema.
 
-        "Query.user": {...}
-        "User.posts": {...}
-        "Post.author": {...}
-
-        or
-
         Query: {
-          user: { ... }
+          user: { ... },
+          ...
+        },
+
+        User: {
+          posts: { ... },
+          ...
         }
        */
       resolvers: {
-        [typeOrFieldName: string]: GraphQLResolverConfig | { [fieldOnlyName: string]: GraphQLResolverConfig }
+        [typeName: string]: { [fieldName: string]: GraphQLResolverConfig }
       },
 
       /*
@@ -369,7 +369,7 @@ declare namespace APIGateway {
     }
 
     interface APIRequestContext {
-      /* User */
+      /* Authenticated user */
       user: any
 
       /* Locale */
