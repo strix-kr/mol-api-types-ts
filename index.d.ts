@@ -471,7 +471,7 @@ declare namespace APIGateway {
   // internal usage
   interface APISyncRequest extends Moleculer.GenericObject {
     services: UnderlyingService.ServiceSchema[]
-    alwaysPreferLatestService: boolean
+    shouldFixCallingNodeID: boolean
   }
 
   namespace CatalogService {
