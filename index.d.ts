@@ -189,13 +189,9 @@ declare namespace APIGateway {
       },
 
       /*
-        nodeResolvers: Optionally define the ways to resolve 'node(id: "type-name:xxx"): Node!' query for the types which implement Node interface.
+        nodeResolvers: Optionally define the ways to resolve 'node(id: "urn:type-name:xxx"): Node!' query for the types which implement Node interface.
 
         "File": {...}
-
-        or
-
-        "File": "file.get"
        */
       nodeResolvers?: {
         [typeName: string]: GraphQLObjectResolverConfig
