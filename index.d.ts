@@ -470,6 +470,7 @@ declare namespace APIGateway {
 
   // internal usage
   interface APISyncRequest extends Moleculer.GenericObject {
+    version: string
     services: UnderlyingService.ServiceSchema[]
     shouldCallFixedNode: boolean
     httpServer: import("http").Server
