@@ -73,7 +73,7 @@ declare namespace APIGateway {
 
       /*
         params: Params key/value map to call the given action.
-        All mapping policies will be implicitly tried among same named params without explicit configuration.
+        All mapping policies except 'Request context mapping' will be implicitly tried among same named params without explicit configuration.
 
         Mapping policies ordered by priority:
 
@@ -211,7 +211,7 @@ declare namespace APIGateway {
 
       /*
         params: Params key/value map to call the given action.
-        All mapping policies will be implicitly tried among same named params without explicit configuration.
+        All mapping policies except 'Request context mapping' will be implicitly tried among same named params without explicit configuration.
 
         Mapping policies ordered by priority:
 
@@ -219,42 +219,62 @@ declare namespace APIGateway {
           Any values can be mapped manually.
           Useful to protect internal variables from being mapped implicitly.
 
-          "Mutation.createMyUser": {
-            action: "iam.user.create",
-            params: {
-              input: {
-                phone: null,
-                disabled: false,
-                isAdmin: false,
-                my: {
-                  role: "member",
-                  settings: {
-                    notification: false
-                  },
-                }
-              }
-            }
+          Mutation: {
+            createMyUser: {
+              action: "iam.user.create",
+              params: {
+                input: {
+                  phone: null,
+                  disabled: false,
+                  isAdmin: false,
+                  my: {
+                    role: "member",
+                    settings: {
+                      notification: false
+                    },
+                  }
+                },
+              },
+            },
+          }
 
-          2) Field arguments mapping.
+          2) Request context mapping.
+          The APIRequestContext (from authentication header, etc.) will be mapped.
+          Same named object param from (2) will be recursively merged with (1) Manual value.
+
+          Query: {
+            mySelf: {
+              action: "iam.user.get",
+              params: {
+                id: "#.user.id"
+              },
+            },
+          }
+
+          3) Field arguments mapping.
           The field arguments (from request variables) will be mapped.
           Same named object param from (2) will be recursively merged with (1) Manual value.
 
-          "Mutation,createMyUser": {
-            action: "iam.user.create",
-            params: {
-              input: "@.input"
-            }
+          Mutation: {
+            createMyUser: {
+              action: "iam.user.create",
+              params: {
+                input: "@.input"
+              },
+            },
           }
 
-          3) Source object mapping.
+          4) Source object mapping.
           The property of source object will be mapped.
           Same named object param from (3) will be recursively merged with (1) Manual value.
 
-          "User.post": {
-            action: "post.get",
-            params: {
-              userId: "$.id"
-            }
+          User: {
+            posts: {
+              action: "post.list",
+              params: {
+                userId: "$.id"
+              },
+            },
           }
 
           Above configuration will make params like { userId: 'if of the source user object' }
