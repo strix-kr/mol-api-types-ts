@@ -185,7 +185,11 @@ declare namespace APIGateway {
         }
        */
       resolvers: {
-        [typeName: string]: { [fieldName: string]: GraphQLResolverConfig }
+        [typeName: string]: {
+          [fieldName: string]: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction | GraphQLSubscriptionResolverConfig
+          __isTypeOf?: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction
+          __resolveType?: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction
+        }
       },
 
       /*
@@ -199,8 +203,6 @@ declare namespace APIGateway {
     }
 
     /* GraphQL resolver mapping configuration. */
-    type GraphQLResolverConfig = GraphQLObjectResolverConfig | GraphQLSubscriptionResolverConfig
-
     interface GraphQLObjectResolverConfig {
       description?: string
 
@@ -243,10 +245,10 @@ declare namespace APIGateway {
           Same named object param from (2) will be recursively merged with (1) Manual value.
 
           Query: {
-            mySelf: {
-              action: "iam.user.get",
+            myPost: {
+              action: "posts.get",
               params: {
-                id: "#.user.id"
+                userId: "#.user.id"
               },
             },
           }
@@ -324,9 +326,10 @@ declare namespace APIGateway {
       description?: string
 
       /*
-        event: The name of moleculer event(s) to subscribe.
+        events: The pattern of moleculer event(s) to subscribe.
+        eg. api.**, user.created, user.**, *.created
        */
-      event: string|string[]
+      events: string[]
 
       /*
         filterAction: The name of action to optionally filter the event with payload.
@@ -371,6 +374,72 @@ declare namespace APIGateway {
       ignoreError?: boolean
     }
 
+    /* GraphQLObjectResolverJavaScriptFunction:
+
+      For the performance's sake, API GraphQL metadata can publish object field resolver as a string which denotes a JavaScript function.
+      Be noted that only object field resolvers can be mapped in this way neither the subscription nor node resolver.
+      eg.
+
+      User: {
+
+        // use Function toString() method
+        simpleField: (
+          (source, args, context, info) => {
+            source.otherField + "some simple task in resolver function";
+          }
+        ).toString(),
+
+        // with TypeScript type hints
+        simpleField: (
+          (source: any, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+            return source.otherField + "some simple task in resolver function";
+          }
+        ).toString(),
+
+        // just primitive string
+        simpleField: `(source, args, context, info) => source.otherField + "some simple task in resolver function")`,
+
+        // better to map actions for complex field
+        complexField: {
+          action: "my.service.do.something",
+          params: {
+            field1: "$.whateverFromSource",
+            field2: "@.anythingFromFieldArgs",
+            field3: "#.fromContextAsWell"
+          },
+        }
+        ...
+
+        // be noted that special field __isTypeOf got only three arguments
+        // ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#istypeof
+        __isTypeOf: (
+          (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+            return source.someSpecialFieldForThisType != null;
+          }
+        ).toString(),
+
+        // be noted that special field __resolveType for Interfaces got only three arguments
+        // ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
+        __resolveType: (
+          (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+            if (source.someSpecialFieldForThisType != null) {
+              return "SpecialType";
+            } else {
+              ...
+            }
+          }
+        ).toString(),
+      },
+
+      SomeInterfaceType: {
+
+      },
+
+    */
+    export type GraphQLObjectResolverJavaScriptFunction = string;
+
+    export type GraphQLResolveInfo = import("graphql").GraphQLResolveInfo;
+
     /* File from multipart/form-data (REST, GraphQL both) content will be parsed as MultipartFile object in params */
     interface MultipartFile {
       name: string
@@ -411,7 +480,7 @@ declare namespace APIGateway {
         source: any
         args: any
         context: GraphQLRequestContext
-        info: import("graphql").GraphQLResolveInfo
+        info: GraphQLResolveInfo
       }
     }
 
