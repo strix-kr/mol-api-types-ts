@@ -533,6 +533,7 @@ declare namespace APIGateway {
     // internal usage (it wraps APIRequestContext)
     interface GraphQLRequestContext extends Exclude<APIRequestContext, "graphql"> {
       _moleculerContext: Moleculer.Context
+      _dataloaders: any
       _extensionStack?: any
     }
 
