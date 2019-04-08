@@ -285,7 +285,7 @@ declare namespace APIGateway {
       params?: { [paramName: string]: any }
 
       /*
-        paramsWithBatch: If any param names given, API Gateway will use the batch loader (GraphQL DataLoader) to resolve the given field.
+        batchedParams: If any param names given, API Gateway will use the batch loader (GraphQL DataLoader) to resolve the given field.
         In this case, the mapped action should be able to serve the request with batched params.
 
         "Query.user": {
@@ -293,7 +293,7 @@ declare namespace APIGateway {
           params: {
             id: "@.id"
           }
-          paramsWithBatch: ["id"]
+          batchedParams: ["id"]
         }
 
         Then "iam.user.get" action should be able to serve the request with { id: ["user-1", "user-2", ...] } params.
@@ -303,12 +303,12 @@ declare namespace APIGateway {
           params: {
             userId: "$.id"
           },
-          paramsWithBatch: ["userId"]
+          batchedParams: ["userId"]
         }
 
         In above example, "post.get" action should be able to serve { userId: ["user-1", "user-2", ...] } params.
        */
-      paramsWithBatch?: string[]
+      batchedParams?: string[]
 
       /*
         ignoreError: If true, "null" will be returned on error. Not affected on non-nullable fields.
