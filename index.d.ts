@@ -297,6 +297,28 @@ declare namespace APIGateway {
         }
 
         Then "iam.user.get" action should be able to serve the request with { id: ["user-1", "user-2", ...] } params.
+        Which means iam.user.get({ id: ["user-1", "user-2", "user-3"]}) should returns:
+
+        [
+          { id: "user-1", ... },
+          { id: "user-2", ... },
+          { id: "user-3", ... },
+        ]
+
+        And the action handler won't throw errors for the several entries with error, because it will make all entries failed.
+        Instead of throwing error, handler should returns:
+
+        [
+          { id: "user-1", ... },
+          { code: 404, code: "USER_NOT_FOUND", blabla..., ... batchError: true },
+          { id: "user-3", ... },
+        ]
+
+        As above, any entries with error should be an object which contains "batchError: true" field.
+        If not the entry will not be considered as an error.
+
+
+        Below is another example.
 
         "User.post": {
           action: "post.get",
@@ -314,6 +336,11 @@ declare namespace APIGateway {
         ignoreError: If true, "null" will be returned on error. Not affected on non-nullable fields.
        */
       ignoreError?: boolean
+    }
+
+    interface GraphQLBatchError {
+      batchError: true
+      [key: string]: any
     }
 
     interface GraphQLSubscriptionSource {
