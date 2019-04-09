@@ -484,6 +484,9 @@ declare namespace APIGateway {
       /* Authenticated user */
       user: any
 
+      /* Authenticated admin (Google Suite organization users) */
+      admin: any
+
       /* Locale */
       locale: string
 
