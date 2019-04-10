@@ -352,66 +352,72 @@ declare namespace APIGateway {
 
       For the performance's sake, API GraphQL metadata can publish object field resolver as a string which denotes a JavaScript function.
       Be noted that only object field resolvers can be mapped in this way neither the subscription nor node resolver.
+
       eg.
 
-      User: {
 
-        // use Function toString() method
-        simpleField: (
-          (source, args, context, info) => {
-            source.otherField + "some simple task in resolver function";
-          }
-        ).toString(),
+      * Use Function toString() method
 
-        // with TypeScript type hints
-        simpleField: (
-          (source: any, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
-            return source.otherField + "some simple task in resolver function";
-          }
-        ).toString(),
-
-        // just primitive string
-        simpleField: `(source, args, context, info) => source.otherField + "some simple task in resolver function")`,
-
-        // better to map actions for complex field
-        complexField: {
-          action: "my.service.do.something",
-          params: {
-            field1: "$.whateverFromSource",
-            field2: "@.anythingFromFieldArgs",
-            field3: "#.fromContextAsWell"
-          },
+      simpleField: (
+        (source, args, context, info) => {
+          source.otherField + "some simple task in resolver function";
         }
-        ...
+      ).toString(),
 
-        // be noted that special field __isTypeOf got only three arguments
-        // ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#istypeof
-        __isTypeOf: (
-          (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
-            return source.someSpecialFieldForThisType != null;
+
+      * With TypeScript type hints
+
+      simpleField: (
+        (source: any, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+          return source.otherField + "some simple task in resolver function";
+        }
+      ).toString(),
+
+
+      * Just as primitive string
+
+      simpleField: `(source, args, context, info) => source.otherField + "some simple task in resolver function")`,
+
+
+      * Better to map actions for complex field
+
+      complexField: {
+        action: "my.service.do.something",
+        params: {
+          field1: "$.whateverFromSource",
+          field2: "@.anythingFromFieldArgs",
+          field3: "#.fromContextAsWell"
+        },
+      }
+
+
+      * Be noted that special field __isTypeOf got only three arguments
+      ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#istypeof
+
+      __isTypeOf: (
+        (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+          return source.someSpecialFieldForThisType != null;
+        }
+      ).toString(),
+
+
+      * Be noted that special field __resolveType for Interfaces got only three arguments
+      ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
+
+      __resolveType: (
+        (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+          if (source.someSpecialFieldForThisType != null) {
+            return "SpecialType";
+          } else {
+            ...
           }
-        ).toString(),
-
-        // be noted that special field __resolveType for Interfaces got only three arguments
-        // ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
-        __resolveType: (
-          (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
-            if (source.someSpecialFieldForThisType != null) {
-              return "SpecialType";
-            } else {
-              ...
-            }
-          }
-        ).toString(),
-      },
-
-      SomeInterfaceType: {
-
-      },
+        }
+      ).toString(),
 
     */
     export type GraphQLObjectResolverJavaScriptFunction = string;
 
+    export type MatchFn = (name: string, pattern: string) => boolean
 
     interface GraphQLSubscriptionResolverConfig {
       description?: string
@@ -431,7 +437,7 @@ declare namespace APIGateway {
         eg.
 
         filter: (
-          (source: GraphQLSubscriptionSource, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+          (source: GraphQLSubscriptionSource, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo, match: MatchFn) => {
             switch (source.event) {
               case "user.updated":
                 return source.payload.id == context.user.id;
@@ -540,45 +546,67 @@ declare namespace APIGateway {
 
     /* Configuration to guard service actions against API request context. */
     interface GuardConfig {
-      description?: string
-
       /*
-        before: Denote the ways to prevent action before call.
-      */
-      before?: {
-        /*
-          action: The pattern of moleculer action name to guard call against API request context.
-          eg. user.create, user.update, user.*.get, user.**
+        action: The pattern of moleculer action name to guard call against API request context.
+        eg. user.create, user.update, user.*.get, user.**
 
-          ActionGuardJavaScriptFunction: a string which denotes a JavaScript function returning boolean which determines whether to invoke the action or not.
+        ActionGuardJavaScriptFunction: a string which denotes a JavaScript function returning boolean which determines whether to invoke the action or not.
 
-          "user.delete": (
-            (result: void, args: any, context: APIRequestContext, action: string) => {
-              // here 'source' is always null
-              return args.id == context.user.id
+
+        eg.
+
+        * Use Function toString() method
+
+        "user.delete": ((action, params, context) => params.id == context.user.id).toString(),
+
+
+        * With TypeScript type hints
+
+        "user.delete": (
+          (action: string, params: any, context: APIRequestContext) => {
+            return params.id == context.user.id
+          }
+        ).toString(),
+
+
+        * With action pattern
+
+        "user.**": (
+          (action: string, params: any, context: APIRequestContext, match: MatchFn) => {
+            switch (action) {
+              case "user.create":
+                // ...
+              default:
+                if (match(action, "user.important.**")) {
+                  // ...
+                }
+                // ...
             }
-          ).toString(),
-        */
-        [action: string]: ActionGuardJavaScriptFunction
-      },
+          }
+        ).toString(),
 
-      /*
-        after: Denote the ways to prevent response the result of action call against API request context.
+
+        * With "after-check" feature
+        When then guard function binds five arguments, the API guard will invoke the guard function twice.
+        First is before call the action.
+        And the other is after the action called successfully.
+
+        "user.get": (action: string, params: any, context: APIRequestContext, match: MatchFn, result?: any) {
+
+          // at first check "result" is "undefined" so this will be skipped.
+          // but at after check "result" is "the result of the action call".
+          if (result) {
+            return !result.disabled || !!context.admin;
+          }
+
+          // at first check this logic will be used to determine whether to call the action or not.
+          return !!(context.admin || context.user && context.user.id == params.id || context.user.email == params.email);
+        }
 
         Be noted that non-idempotent actions which contains sort of data manipulation logic should not be guarded "after" action already called.
-      */
-      after?: {
-        /*
-          eg.
 
-          "post.get": (
-            (result: any, args: any, context: APIRequestContext, action: string) => {
-              return source.authorId == context.user.id
-            }
-          ).toString(),
-        */
-        [action: string]: ActionGuardJavaScriptFunction
-      },
+      */
+      [action: string]: ActionGuardJavaScriptFunction
     }
 
     export type ActionGuardJavaScriptFunction = string;
