@@ -649,6 +649,7 @@ declare namespace APIGateway {
     // internal/client-side usage
     interface GraphQLWebSocketConnectionParams {
       authorization?: string
+      admin?: string
     }
 
     interface Action extends Moleculer.Action {
