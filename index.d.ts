@@ -22,6 +22,7 @@ declare namespace APIGateway {
     interface APIConfig {
       rest?: RESTConfig
       graphql?: GraphQLConfig
+      guard?: GuardConfig
     }
 
     /* Configuration to map service actions to REST endpoints. */
@@ -67,7 +68,7 @@ declare namespace APIGateway {
       description?: string
 
       /*
-        action: The name of action to map to REST alias.
+        action: The name of moleculer action to map to REST alias.
        */
       action: string
 
@@ -124,7 +125,7 @@ declare namespace APIGateway {
             action: "iam.user.get",
             params: {
               options: "@.opts",
-              filter: "@.filter",
+              order: "@.order",
             }
           }
 
@@ -202,12 +203,15 @@ declare namespace APIGateway {
       },
     }
 
+    export type GraphQLResolveInfo = import("graphql").GraphQLResolveInfo;
+
+
     /* GraphQL resolver mapping configuration. */
     interface GraphQLObjectResolverConfig {
       description?: string
 
       /*
-        action: The name of action to map to resolver.
+        action: The name of moleculer action to map to resolver.
        */
       action: string
 
@@ -343,63 +347,6 @@ declare namespace APIGateway {
       [key: string]: any
     }
 
-    interface GraphQLSubscriptionSource {
-      event: string
-      payload: any
-      nodeID: string
-    }
-
-    interface GraphQLSubscriptionResolverConfig {
-      description?: string
-
-      /*
-        events: The pattern of moleculer event(s) to subscribe.
-        eg. api.**, user.created, user.**, *.created
-       */
-      events: string[]
-
-      /*
-        filterAction: The name of action to optionally filter the event with payload.
-        Given action should return boolean value from { source: GraphQLSubscriptionSource, args: any } params.
-
-        if the filterAction is not given, resolver will always publish events.
-       */
-      filterAction?: string
-
-      /*
-        action: The name of action to call with event payload.
-
-        if the action is not given, resolver will just return the raw event payload.
-       */
-      action?: string
-
-      /*
-        params: Params key/value map to call the given action.
-
-        The mapping mechanism is same with regular resolver.
-        But the params "source object"($) notation will be mapped with { eventName, eventPayload } object.
-
-        eg.
-
-        "Subscription.notification": {
-          event: "noti.sent",
-          action: "noti.get",
-          params: {
-            id: "$.payload.id",
-          },
-        }
-
-        somewhere, an event has been emitted as like:
-
-        this.broker.broadcast("noti.sent", { id: "xxx" })
-
-
-        then the "Subscription.notification" resolver will call "noti.get" with { id: "xxx" } params.
-       */
-      params?: { [paramName: string]: any }
-
-      ignoreError?: boolean
-    }
 
     /* GraphQLObjectResolverJavaScriptFunction:
 
@@ -465,7 +412,83 @@ declare namespace APIGateway {
     */
     export type GraphQLObjectResolverJavaScriptFunction = string;
 
-    export type GraphQLResolveInfo = import("graphql").GraphQLResolveInfo;
+
+    interface GraphQLSubscriptionResolverConfig {
+      description?: string
+
+      /*
+        events: The pattern of moleculer event name(s) to subscribe.
+        eg. api.**, user.created, user.**, *.created
+       */
+      events: string[]
+
+      /*
+        filter: Optionally determine whether to publish given event or not.
+        if the filter is not given, resolver will always publish events.
+
+        GraphQLSubscriptionFilterJavaScriptFunction: a string which denotes a JavaScript function returning boolean which determines whether to publish given event or not.
+
+        eg.
+
+        filter: (
+          (source: GraphQLSubscriptionSource, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+            switch (source.event) {
+              case "user.updated":
+                return source.payload.id == context.user.id;
+              break;
+              default:
+                return false;
+            }
+          }
+        ).toString(),
+       */
+      filter?: GraphQLSubscriptionFilterJavaScriptFunction
+
+      /*
+        action: The name of moleculer action to call with event payload.
+
+        if the action is not given, resolver will just return "{ event, payload }: GraphQLSubscriptionSource" object.
+       */
+      action?: string
+
+      /*
+        params: Params key/value map to call the given action.
+
+        The mapping mechanism is same with regular resolver.
+        But the params "source object"($) notation will be mapped with "{ event, payload }: GraphQLSubscriptionSource" object.
+
+        eg.
+
+        Subscription: {
+          notification: {
+            event: "noti.sent",
+            action: "noti.get",
+            params: {
+              id: "$.payload.id",
+            },
+          }
+        }
+
+        somewhere, an event has been emitted as like:
+
+        this.broker.broadcast("noti.sent", { id: "xxx" })
+
+
+        then the "Subscription.notification" resolver will call "noti.get" with { id: "xxx" } params.
+       */
+      params?: { [paramName: string]: any }
+
+      ignoreError?: boolean
+    }
+
+    interface GraphQLSubscriptionSource {
+      event: string
+      payload: any
+      nodeID: string
+    }
+
+    export type GraphQLSubscriptionFilterJavaScriptFunction = string;
+
 
     /* File from multipart/form-data (REST, GraphQL both) content will be parsed as MultipartFile object in params */
     interface MultipartFile {
@@ -474,6 +497,7 @@ declare namespace APIGateway {
       encoding: string
       contentType: string
     }
+
 
     /* Service action would get below 'meta' from api gateway. */
     interface ActionContextMeta extends Moleculer.GenericObject {
@@ -513,6 +537,52 @@ declare namespace APIGateway {
         info: GraphQLResolveInfo
       }
     }
+
+    /* Configuration to guard service actions against API request context. */
+    interface GuardConfig {
+      description?: string
+
+      /*
+        before: Denote the ways to prevent action before call.
+      */
+      before?: {
+        /*
+          action: The pattern of moleculer action name to guard call against API request context.
+          eg. user.create, user.update, user.*.get, user.**
+
+          ActionGuardJavaScriptFunction: a string which denotes a JavaScript function returning boolean which determines whether to invoke the action or not.
+
+          "user.delete": (
+            (result: void, args: any, context: APIRequestContext, action: string) => {
+              // here 'source' is always null
+              return args.id == context.user.id
+            }
+          ).toString(),
+        */
+        [action: string]: ActionGuardJavaScriptFunction
+      },
+
+      /*
+        after: Denote the ways to prevent response the result of action call against API request context.
+
+        Be noted that non-idempotent actions which contains sort of data manipulation logic should not be guarded "after" action already called.
+      */
+      after?: {
+        /*
+          eg.
+
+          "post.get": (
+            (result: any, args: any, context: APIRequestContext, action: string) => {
+              return source.authorId == context.user.id
+            }
+          ).toString(),
+        */
+        [action: string]: ActionGuardJavaScriptFunction
+      },
+    }
+
+    export type ActionGuardJavaScriptFunction = string;
+
 
     /*
       HTTP response transformation:
