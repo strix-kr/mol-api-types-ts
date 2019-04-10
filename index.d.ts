@@ -606,7 +606,7 @@ declare namespace APIGateway {
         Be noted that non-idempotent actions which contains sort of data manipulation logic should not be guarded "after" action already called.
 
       */
-      [action: string]: ActionGuardJavaScriptFunction
+      [actionPattern: string]: ActionGuardJavaScriptFunction
     }
 
     export type ActionGuardJavaScriptFunction = string;
@@ -689,10 +689,9 @@ declare namespace APIGateway {
 
   // internal usage
   interface APISyncRequest extends Moleculer.GenericObject {
-    version: string
     services: UnderlyingService.ServiceSchema[]
-    shouldCallFixedNode: boolean
     httpServer: import("http").Server
+    shouldCallFixedNode: boolean
   }
 
   namespace CatalogService {
