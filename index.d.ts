@@ -6,14 +6,15 @@ declare namespace APIGateway {
 
     /* Service schema of underlying service. */
     interface ServiceSchema extends Moleculer.ServiceSchema {
-      // Metadata of underlying service.
       metadata?: {
-        // API Gateway Service will seek only the "api" field of service metadata.
         api?: APIConfig
 
-        // Internal usage to compare api configuration between same named services.
+        // internal usage to compare api configuration between same named services.
         apiVersion?: string
       } & Moleculer.GenericObject
+
+      // internal usage to report stdout of vm function to origin service
+      $console?: { log: Function, warn: Function, info: Function, error: Function, errorWithoutPropagation: Function }
 
       actions:  { [key: string]: Action | ActionHandler }
     }
@@ -738,8 +739,8 @@ declare namespace APIGateway {
     */
     interface ServiceReport {
       serviceName: string
+      serviceNodeID?: string // if omitted, it is broadcast
       gatewayNodeID: string
-      serviceNodeID: string
       type: "warn" | "info" | "error"
       messages: any[]
       createdAt: Date
