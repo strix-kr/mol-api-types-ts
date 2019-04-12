@@ -188,19 +188,38 @@ declare namespace APIGateway {
        */
       resolvers: {
         [typeName: string]: {
+          // see below for detail of configuration
           [fieldName: string]: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction | GraphQLSubscriptionResolverConfig
+
+          /* __isTypeOf:
+             ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
+          */
           __isTypeOf?: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction
+
+          /*
+            __resolveType:
+            ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
+          */
           __resolveType?: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction
+
+          /*
+          __resolveNode: Optionally define the ways to resolve 'node(id: "urn:type-name:id-of-type"): Node!' query for the types which implement Node interface.
+          "@id" will be mapped with "id-of-type" part in URN string.
+
+          eg.
+
+          File: {
+            ...
+            __resolveNode: {
+              action: "file.get",
+              params: {
+                id: "@.id",
+              },
+            }
+          }
+         */
+          __resolveNode?: GraphQLObjectResolverConfig
         }
-      },
-
-      /*
-        nodeResolvers: Optionally define the ways to resolve 'node(id: "urn:type-name:xxx"): Node!' query for the types which implement Node interface.
-
-        "File": {...}
-       */
-      nodeResolvers?: {
-        [typeName: string]: GraphQLObjectResolverConfig
       },
     }
 
