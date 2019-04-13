@@ -11,6 +11,9 @@ declare namespace APIGateway {
 
         // internal usage to compare api configuration between same named services.
         apiVersion?: string
+
+        // optional git repository URL for issue tracking
+        repository?: string
       } & Moleculer.GenericObject
 
       // internal usage to report stdout of vm function to origin service
@@ -555,13 +558,14 @@ declare namespace APIGateway {
         GraphQL request information:
 
         This field would be filled when action called via GraphQL schema.
+        And will be filled as "true" before API gateway send the response.
       */
       graphql?: {
         source: any
         args: any
         context: GraphQLRequestContext
         info: GraphQLResolveInfo
-      }
+      } | true
     }
 
     /* Configuration to guard service actions against API request context. */
