@@ -1,4 +1,4 @@
-import Moleculer from "moleculer";
+import Moleculer, { Service } from "moleculer";
 
 declare namespace APIGateway {
 
@@ -9,17 +9,22 @@ declare namespace APIGateway {
       metadata?: {
         api?: APIConfig
 
-        // internal usage to compare api configuration between same named services.
+        // internally calculated to compare api configuration among same services.
         apiVersion?: string
 
         // optional git repository URL for issue tracking
         repository?: string
+
+        // optional description
+        description?: string
       } & Moleculer.GenericObject
 
       // internal usage to report stdout of vm function to origin service
       $console?: { log: Function, warn: Function, info: Function, error: Function, errorWithoutPropagation: Function }
 
+      // override for type hinting
       actions:  { [key: string]: Action | ActionHandler }
+      events: { [key: string]: ServiceEvent | ServiceEventHandler }
     }
 
     /* Service actions can be published with api configurations in metadata. */
@@ -706,9 +711,16 @@ declare namespace APIGateway {
 
     interface Action extends Moleculer.Action {
       handler?: ActionHandler;
+      description?: string;
     }
 
     type ActionHandler<T = any> = ((ctx: Moleculer.Context<Moleculer.GenericObject, ActionContextMeta>) => PromiseLike<T> | T) & ThisType<Moleculer.Service>;
+
+    interface ServiceEvent extends Moleculer.ServiceEvent {
+      description?: string;
+    }
+
+    type ServiceEventHandler = ((payload: any, sender: string, eventName: string) => void) & ThisType<Moleculer.Service>;
   }
 
   // internal usage
@@ -770,6 +782,75 @@ declare namespace APIGateway {
 
       // prevent message from being published to GraphQL subscription channel.
       $stopPropagation?: boolean
+    }
+
+    interface Node {
+      id: string
+      client: {
+        type: string
+        version: string
+        langVersion: string
+      }
+      available: boolean
+      lastHeartbeatTime: number
+      hostname: string
+      ipList: string[]
+      services: UnderlyingService.ServiceSchema[]
+    }
+
+    /* Node instance example:
+
+      Node {
+        id: 'eunjus-imac.local-7513',
+        available: true,
+        local: false,
+        lastHeartbeatTime: 1555488756931,
+        config: {},
+        client: { type: 'nodejs', version: '0.13.8', langVersion: 'v11.10.1' },
+        ipList: [ '192.168.2.214' ],
+        port: undefined,
+        hostname: 'eunjus-iMac.local',
+        udpAddress: null,
+        cpu: 12,
+        cpuSeq: 1,
+        seq: 2,
+        offlineSince: null,
+        services:[
+          { name: 'trade.stats',
+           settings: {},
+           metadata: { api: [Object] },
+           actions:
+            { 'trade.stats.list.by.broker': [Object],
+              'trade.stats.list.by.group': [Object],
+              'trade.stats.list.by.plant': [Object] },
+           events: {} },
+          { name: 'trade',
+           settings: {},
+           metadata: { api: [Object] },
+           actions: {},
+           events:
+            { 'api.catalog.report.api**': [Object],
+              'api.catalog.report.trade**': [Object] } }
+        ],
+      }
+
+    */
+
+    interface NodeUsage {
+      uptimeSeconds:   number
+      cpuTotal:        number
+      cpuLoad1:        number
+      cpuLoad5:        number
+      cpuLoad15:       number
+      cpuPercent:      number
+      memTotal:        number
+      memLoad:         number
+      memFree:         number
+      memPercent:      number
+      sentPackets:     number
+      sentBytes:       number
+      receivedPackets: number
+      receivedBytes:   number
     }
   }
 }
