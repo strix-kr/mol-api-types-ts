@@ -836,7 +836,7 @@ declare namespace APIGateway {
 
     */
 
-    interface NodeUsage {
+    interface NodeStatus {
       uptimeSeconds:   number
       cpuTotal:        number
       cpuLoad1:        number
