@@ -23,8 +23,8 @@ declare namespace APIGateway {
       $console?: { log: Function, warn: Function, info: Function, error: Function, errorWithoutPropagation: Function }
 
       // override for type hinting
-      actions:  { [key: string]: Action | ActionHandler }
-      events: { [key: string]: ServiceEvent | ServiceEventHandler }
+      actions?:  { [key: string]: Action | ActionHandler }
+      events?: { [key: string]: ServiceEvent | ServiceEventHandler }
     }
 
     /* Service actions can be published with api configurations in metadata. */
