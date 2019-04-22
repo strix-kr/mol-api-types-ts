@@ -852,6 +852,29 @@ declare namespace APIGateway {
       receivedPackets: number
       receivedBytes:   number
     }
+
+    interface APIRequestTrace {
+      id: string
+      parentID: string
+      requestID: string
+      level: number
+      nodeID: string
+      action: string
+      params: any
+      meta: any
+      data: any
+      error: any
+      duration: number // ms
+      createdAt: Date
+    }
+
+    interface EventEmission {
+      id?: string
+      event: string
+      payload: any
+      nodeID: string
+      createdAt: Date
+    }
   }
 }
 
