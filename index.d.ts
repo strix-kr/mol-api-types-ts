@@ -615,25 +615,22 @@ declare namespace APIGateway {
         ).toString(),
 
 
-        * With "after-check" feature
-        When then guard function binds five arguments, the API guard will invoke the guard function twice.
-        First is before call the action.
-        And the other is after the action called successfully.
+        * With "call" method
+        The last argument is "call" method of Molculer Context,
 
-        "user.get": (action: string, params: any, context: APIRequestContext, match: MatchFn, result?: any) {
+        "user.get": async (action: string, params: any, context: APIRequestContext, match: MatchFn, call: Moleculer.Context["call"]) {
+          const result = await call("any.client.action", { param: context.user && context.user.any && context.user.any,email })
 
-          // at first check "result" is "undefined" so this will be skipped.
-          // but at after check "result" is "the result of the action call".
           if (result) {
-            return !result.disabled || !!context.admin;
+            // ...
           }
 
-          // at first check this logic will be used to determine whether to call the action or not.
           return !!(context.admin || context.user && context.user.id == params.id || context.user.email == params.email);
         }
 
-        Be noted that non-idempotent actions which contains sort of data manipulation logic should not be guarded "after" action already called.
-
+        Be noted that non-idempotent actions which contains sort of data manipulation logic should not be called in guard.
+        And when call argument is bound to guard (which means guard function receives five arguments),
+        the guard result will not be cached, it will degrade operation performance significantly.
       */
       [actionPattern: string]: ActionGuardJavaScriptFunction
     }
