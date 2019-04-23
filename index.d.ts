@@ -1,4 +1,4 @@
-import Moleculer, { Service } from "moleculer";
+import Moleculer from "moleculer";
 
 declare namespace APIGateway {
 
@@ -197,18 +197,18 @@ declare namespace APIGateway {
       resolvers: {
         [typeName: string]: {
           // see below for detail of configuration
-          [fieldName: string]: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction | GraphQLSubscriptionResolverConfig
+          [fieldName: string]: GraphQLObjectResolverConfig | GraphQLObjectResolverFnString | GraphQLSubscriptionResolverConfig
 
           /* __isTypeOf:
              ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
           */
-          __isTypeOf?: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction
+          __isTypeOf?: GraphQLObjectResolverConfig | GraphQLObjectResolverFnString
 
           /*
             __resolveType:
             ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
           */
-          __resolveType?: GraphQLObjectResolverConfig | GraphQLObjectResolverJavaScriptFunction
+          __resolveType?: GraphQLObjectResolverConfig | GraphQLObjectResolverFnString
 
           /*
           __resolveNode: Optionally define the ways to resolve 'node(id: "urn:type-name:id-of-type"): Node!' query for the types which implement Node interface.
@@ -376,10 +376,16 @@ declare namespace APIGateway {
     }
 
 
-    /* GraphQLObjectResolverJavaScriptFunction:
+    /* GraphQLObjectResolverFnString:
 
       For the performance's sake, API GraphQL metadata can publish object field resolver as a string which denotes a JavaScript function.
       Be noted that only object field resolvers can be mapped in this way neither the subscription nor node resolver.
+
+
+      GraphQLObjectResolverFn:
+
+      Parsed GraphQLObjectResolverFnString should respect GraphQLObjectResolverFn interface.
+
 
       eg.
 
@@ -395,11 +401,11 @@ declare namespace APIGateway {
 
       * With TypeScript type hints
 
-      simpleField: (
-        (source: any, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+      simpleField: ((
+        (source, args, context, info) => {
           return source.otherField + "some simple task in resolver function";
         }
-      ).toString(),
+      ) as GraphQLObjectResolverFn).toString(),
 
 
       * Just as primitive string
@@ -422,28 +428,30 @@ declare namespace APIGateway {
       * Be noted that special field __isTypeOf got only three arguments
       ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#istypeof
 
-      __isTypeOf: (
-        (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+      __isTypeOf: ((
+        (source, context, info) => {
           return source.someSpecialFieldForThisType != null;
         }
-      ).toString(),
+      ) as GraphQLObjectResolver__Fn).toString(),
 
 
       * Be noted that special field __resolveType for Interfaces got only three arguments
       ref: https://graphql-dotnet.github.io/docs/getting-started/interfaces/#resolvetype
 
-      __resolveType: (
-        (source: any, context: GraphQLRequestContext, info: GraphQLResolveInfo) => {
+      __resolveType: ((
+        (source, context, info) => {
           if (source.someSpecialFieldForThisType != null) {
             return "SpecialType";
           } else {
             ...
           }
         }
-      ).toString(),
+      ) as GraphQLObjectResolver__Fn).toString(),
 
     */
-    export type GraphQLObjectResolverJavaScriptFunction = string;
+    export type GraphQLObjectResolverFnString = string;
+    export type GraphQLObjectResolverFn<S = any, A = any> = (source: S, args: A, context: GraphQLRequestContext, info: GraphQLResolveInfo) => any;
+    export type GraphQLObjectResolver__Fn<S = any> = (source: S, context: GraphQLRequestContext, info: GraphQLResolveInfo) => any;
 
     export type MatchFn = (name: string, pattern: string) => boolean
 
@@ -460,12 +468,13 @@ declare namespace APIGateway {
         filter: Optionally determine whether to publish given event or not.
         if the filter is not given, resolver will always publish events.
 
-        GraphQLSubscriptionFilterJavaScriptFunction: a string which denotes a JavaScript function returning boolean which determines whether to publish given event or not.
+        GraphQLSubscriptionFilterFnString: a string which denotes a JavaScript function returning boolean which determines whether to publish given event or not.
+        GraphQLSubscriptionFilterFn: Parsed GraphQLSubscriptionFilterFnString should respect GraphQLSubscriptionFilterFn interface.
 
         eg.
 
-        filter: (
-          (source: GraphQLSubscriptionSource, args: any, context: GraphQLRequestContext, info: GraphQLResolveInfo, match: MatchFn) => {
+        filter: ((
+          (source, args, context, info, match) => {
             switch (source.event) {
               case "user.updated":
                 return source.payload.id == context.user.id;
@@ -474,9 +483,9 @@ declare namespace APIGateway {
                 return false;
             }
           }
-        ).toString(),
+        ) as UnderlyingService.GraphQLSubscriptionFilterFn).toString(),
        */
-      filter?: GraphQLSubscriptionFilterJavaScriptFunction
+      filter?: GraphQLSubscriptionFilterFnString
 
       /*
         action: The name of moleculer action to call with event payload.
@@ -515,13 +524,14 @@ declare namespace APIGateway {
       ignoreError?: boolean
     }
 
-    interface GraphQLSubscriptionSource {
+    interface GraphQLSubscriptionSource<S = any> {
       event: string
-      payload: any
+      payload: S
       nodeID: string
     }
 
-    export type GraphQLSubscriptionFilterJavaScriptFunction = string;
+    export type GraphQLSubscriptionFilterFnString = string;
+    export type GraphQLSubscriptionFilterFn<S = any, A = any> = (source: GraphQLSubscriptionSource<S>, args: A, context: GraphQLRequestContext, info: GraphQLResolveInfo, match: MatchFn) => boolean;
 
 
     /* File from multipart/form-data (REST, GraphQL both) content will be parsed as MultipartFile object in params */
@@ -579,8 +589,8 @@ declare namespace APIGateway {
         action: The pattern of moleculer action name to guard call against API request context.
         eg. user.create, user.update, user.*.get, user.**
 
-        ActionGuardJavaScriptFunction: a string which denotes a JavaScript function returning boolean which determines whether to invoke the action or not.
-
+        ActionGuardFnString: a string which denotes a JavaScript function returning boolean which determines whether to invoke the action or not.
+        ActionGuardFn: Parsed ActionGuardFnString should respect ActionGuardFn interface.
 
         eg.
 
@@ -591,17 +601,17 @@ declare namespace APIGateway {
 
         * With TypeScript type hints
 
-        "user.delete": (
-          (action: string, params: any, context: APIRequestContext) => {
+        "user.delete": ((
+          (action, params, context) => {
             return params.id == context.user.id
           }
-        ).toString(),
+        ) as UnderlyingService.ActionGuardFn).toString(),
 
 
         * With action pattern
 
-        "user.**": (
-          (action: string, params: any, context: APIRequestContext, match: MatchFn) => {
+        "user.**": ((
+          (action, params, context, match) => {
             switch (action) {
               case "user.create":
                 // ...
@@ -612,30 +622,31 @@ declare namespace APIGateway {
                 // ...
             }
           }
-        ).toString(),
+        ) as UnderlyingService.ActionGuardFn).toString(),
 
 
         * With "call" method
-        The last argument is "call" method of Molculer Context,
+        The last argument is "call" method of Molculer context.
 
-        "user.get": async (action: string, params: any, context: APIRequestContext, match: MatchFn, call: Moleculer.Context["call"]) {
-          const result = await call("any.client.action", { param: context.user && context.user.any && context.user.any,email })
+        "user.get": ((async (action, params, context, match, call) {
+          const result = await call("any.client.action", { something: context.user && context.user.any && context.user.any,thing })
 
           if (result) {
             // ...
           }
 
           return !!(context.admin || context.user && context.user.id == params.id || context.user.email == params.email);
-        }
+        }) as UnderlyingService.ActionGuardFn).toString(),
 
         Be noted that non-idempotent actions which contains sort of data manipulation logic should not be called in guard.
-        And when call argument is bound to guard (which means guard function receives five arguments),
-        the guard result will not be cached, it will degrade operation performance significantly.
+        And when call argument is bound to guard (which means guard function receives "five" arguments),
+        the guard result will not be cached (actually cached for 2.5s), it will degrade operation performance significantly.
       */
-      [actionPattern: string]: ActionGuardJavaScriptFunction
+      [actionPattern: string]: ActionGuardFnString
     }
 
-    export type ActionGuardJavaScriptFunction = string;
+    export type ActionGuardFnString = string;
+    export type ActionGuardFn<P = any> = (action: string, params: P, context: APIRequestContext, match: MatchFn, call: Moleculer.Context["call"]) => Promise<boolean>|boolean;
 
 
     /*
