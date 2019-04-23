@@ -854,9 +854,13 @@ declare namespace APIGateway {
     }
 
     interface APIRequestTrace {
-      id: string
-      parentID: string
+      id?: string
+      environment?: string
+      gatewayNodeID?: string
+
       requestID: string
+      contextID: string
+      parentContextID: string
       level: number
       nodeID: string
       action: string
@@ -870,9 +874,12 @@ declare namespace APIGateway {
 
     interface EventEmission {
       id?: string
+      environment?: string
+      gatewayNodeID?: string
+
+      nodeID: string
       event: string
       payload: any
-      nodeID: string
       createdAt: Date
     }
   }
