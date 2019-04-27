@@ -718,8 +718,10 @@ declare namespace APIGateway {
     }
 
     interface Action extends Moleculer.Action {
-      handler?: ActionHandler;
-      description?: string;
+      handler?: ActionHandler
+      description?: string          // for documentation (markdown support)
+      stream?: boolean              // for documentation
+      meta?: Moleculer.ActionParams // for documentation
     }
 
     type ActionHandler<T = any> = ((ctx: Moleculer.Context<Moleculer.GenericObject, ActionContextMeta>) => PromiseLike<T> | T) & ThisType<Moleculer.Service>;
