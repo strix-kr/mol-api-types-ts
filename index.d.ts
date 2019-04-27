@@ -312,7 +312,6 @@ declare namespace APIGateway {
           }
 
           Above configuration will make params like { userId: 'if of the source user object' }
-
        */
       params?: { [paramName: string]: any }
 
@@ -891,6 +890,59 @@ declare namespace APIGateway {
       event: string
       payload: any
       createdAt: Date
+    }
+
+    interface ServiceAPIDef {
+      graphql?: ServiceGraphQLTypeDef[]
+      rest?: ServiceRESTAliasDef[]
+    }
+
+    interface ServiceGraphQLTypeDef {
+      service: string
+      name: string
+      description?: string
+      kind: string
+      source: string
+      hasNodeResolver: boolean
+      hasTypeResolver: boolean
+      resolver: any
+      actionFields: ServiceGraphQLActionFieldDef[]
+    }
+
+    interface ServiceGraphQLActionFieldDef {
+      name: string
+      description?: string
+      action: string
+      resolver: any
+      guards: any[]
+      paramMappings: any
+    }
+
+    interface ServiceRESTAliasDef {
+      service: string
+      path: string
+      method: string
+      description?: string
+      action: string
+      guards: any[]
+      paramMappings: any
+    }
+
+    interface ActionParamMappings {
+      [actionParamName: string]: {
+        // mapping type
+        type: "manual"|"implicit" // common
+          // graphql
+          |"source"|"args"|"context"
+          // REST
+          |"path"|"query|body"
+
+        // target value or field name (include REST type casting)
+        target: any
+
+        // original api param config
+        raw: any
+      }
     }
   }
 }
