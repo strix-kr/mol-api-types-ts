@@ -853,18 +853,13 @@ declare namespace APIGateway {
       cpuLoad15:       number
       cpuPercent:      number
       memTotalBytes:   number
-      memTotalSize:    string
       memLoadBytes:    number
-      memLoadSize:     string
       memFreeBytes:    number
-      memFreeSize:     string
       memPercent:      number
       sentPackets:     number
       sentBytes:       number
-      sentSize:        string
       receivedPackets: number
       receivedBytes:   number
-      receivedSize:    string
     }
 
     interface APIRequestTrace {
