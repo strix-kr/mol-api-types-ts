@@ -881,6 +881,20 @@ declare namespace APIGateway {
       createdAt: Date
     }
 
+    interface APIRequestTraceAnalysis {
+      action: string
+      callCount: number
+      errorCount: number
+      internalErrorCount: number
+      errorRate: number
+      internalErrorRate: number
+      avgDuration: number
+      minDuration: number
+      maxDuration: number
+      totalDuration: number
+      from: Date
+    }
+
     interface EventEmission {
       id?: string
       environment?: string
