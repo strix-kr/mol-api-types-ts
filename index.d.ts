@@ -881,7 +881,7 @@ declare namespace APIGateway {
       createdAt: Date
     }
 
-    interface APIRequestTraceAnalysis {
+    interface APIRequestTracesAnalysis {
       action: string
       callCount: number
       errorCount: number
