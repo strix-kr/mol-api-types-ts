@@ -937,11 +937,11 @@ declare namespace APIGateway {
           // REST
           |"path"|"query|body"
 
-        // target value or field name (include REST type casting)
-        target: any
+        // source value (manual) or field name (exclude REST type casting)
+        source: any
 
-        // original api param config
-        raw: any
+        // action param schema
+        schema: any
       }
     }
   }
