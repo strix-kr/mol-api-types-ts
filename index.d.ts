@@ -954,8 +954,8 @@ declare namespace APIGateway {
         // source value (manual) or field name (exclude REST type casting)
         source: any
 
-        // action param schema
-        schema: any
+        // action param schema (null means potentially wrong mapping for undefined action param)
+        schema: any | null
       }
     }
   }
