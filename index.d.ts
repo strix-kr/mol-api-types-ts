@@ -892,6 +892,7 @@ declare namespace APIGateway {
       minDuration: number
       maxDuration: number
       totalDuration: number
+      hours: number
       from: Date
     }
 
