@@ -883,6 +883,7 @@ declare namespace APIGateway {
 
     interface APIRequestTracesAnalysis {
       action: string
+      service: string
       callCount: number
       errorCount: number
       internalErrorCount: number
