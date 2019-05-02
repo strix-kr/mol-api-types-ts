@@ -554,8 +554,11 @@ declare namespace APIGateway {
       /* Authenticated admin (Google Suite organization users) */
       admin: any
 
-      /* Locale */
+      /* Locale: fallback is ko-KR */
       locale: string
+
+      /* Language code: fallback is ko */
+      lang: string
 
       /*
         REST request information:
